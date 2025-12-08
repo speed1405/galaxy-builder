@@ -788,13 +788,26 @@ function updateSettingsUI() {
 
 // Apply setting change
 function applySetting(settingName, value) {
+    // Validate settingName to prevent unintended property modification
+    const allowedSettings = [
+        'autoSaveEnabled', 'autoSaveInterval', 'gameSpeed', 'showResourceRates',
+        'showNotifications', 'confirmReset', 'confirmBulkActions', 
+        'autoCombatEnabled', 'offlineProgressEnabled'
+    ];
+    
+    if (!allowedSettings.includes(settingName)) {
+        console.error(`Invalid setting name: ${settingName}`);
+        return;
+    }
+    
     gameSettings[settingName] = value;
     saveSettings();
     
-    if (settingName === 'autoSaveInterval') {
-        // Restart auto-save timer with new interval
+    // Handle auto-save timer changes
+    if (settingName === 'autoSaveInterval' || settingName === 'autoSaveEnabled') {
         if (window.autoSaveTimer) {
             clearInterval(window.autoSaveTimer);
+            window.autoSaveTimer = null;
         }
         if (gameSettings.autoSaveEnabled) {
             window.autoSaveTimer = setInterval(saveGame, gameSettings.autoSaveInterval * 1000);
