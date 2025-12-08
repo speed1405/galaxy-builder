@@ -166,7 +166,7 @@ This section can be populated with suggestions from the community:
 ## Implementation Priority Order
 
 1. **Phase 1 (Core Loop Enhancement)**: Prestige System, More Technologies, Enhanced Combat, Exploration, Game Options/Settings
-2. **Phase 2 (Content Expansion)**: Quality of Life Improvements, More Buildings/Ships, Achievements  
+2. **Phase 2 (Content Expansion)**: Quality of Life Improvements, More Buildings/Ships, Achievements
 3. **Phase 3 (Polish)**: UI/UX Improvements, Statistics, Resource Management, Content Additions
 4. **Phase 4 (Community)**: Multiplayer/Social Features, Modding Support
 
