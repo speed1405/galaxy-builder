@@ -1,4 +1,12 @@
 // Galaxy Builder - Incremental Game Engine
+
+// Game Configuration
+const gameConfig = {
+    combatDefeatLossRate: 0.1, // Lose 10% of fleet on combat defeat
+    gameLoopInterval: 100, // Game loop update interval in ms
+    autoSaveInterval: 30000 // Auto-save interval in ms
+};
+
 // Game State
 const gameState = {
     resources: {
@@ -345,9 +353,8 @@ function attackEnemy(enemyIndex) {
         addCombatLog(`Victory against ${enemy.name}! Gained rewards.`, 'victory');
     } else {
         // Defeat - lose some ships
-        const lossRate = 0.1; // Lose 10% of fleet
         for (const shipKey in gameState.ships) {
-            const losses = Math.ceil(gameState.ships[shipKey] * lossRate);
+            const losses = Math.ceil(gameState.ships[shipKey] * gameConfig.combatDefeatLossRate);
             gameState.ships[shipKey] = Math.max(0, gameState.ships[shipKey] - losses);
         }
         addCombatLog(`Defeated by ${enemy.name}! Lost 10% of fleet.`, 'defeat');
@@ -554,11 +561,11 @@ function init() {
     // Initial UI update
     updateUI();
     
-    // Start game loop (update every 100ms)
-    setInterval(gameLoop, 100);
+    // Start game loop
+    setInterval(gameLoop, gameConfig.gameLoopInterval);
     
-    // Auto-save every 30 seconds
-    setInterval(saveGame, 30000);
+    // Auto-save periodically
+    setInterval(saveGame, gameConfig.autoSaveInterval);
     
     addCombatLog('Welcome to Galaxy Builder! Start by building Metal Mines and Solar Panels.', 'victory');
 }
