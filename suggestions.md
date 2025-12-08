@@ -32,7 +32,7 @@ This document contains ideas and suggestions for future development of the Galax
 ### 5. Game Options/Settings System
 - **Settings Menu**: Dedicated interface for game configuration
 - **Auto-Save Control**: Adjust auto-save interval or disable/enable
-- **Game Speed**: Slow/Normal/Fast/Paused modes for better control
+- **Game Speed Controls**: Slow/Normal/Fast/Paused modes with UI toggle buttons
 - **Notification Preferences**: Configure alerts for resources, combat, and milestones
 - **Display Options**: Toggle resource rates, tooltips, and UI elements
 - **Accessibility**: Colorblind modes, font size adjustments, reduced motion
@@ -43,8 +43,7 @@ This document contains ideas and suggestions for future development of the Galax
 ### 6. Quality of Life Improvements
 - **Bulk Actions**: Build multiple buildings/ships at once with quantity selector
 - **Offline Progress**: Calculate and award resources earned while away (with caps)
-- **Speed Controls**: Quick toggle buttons for game speed adjustment
-- **Hotkeys/Shortcuts**: Keyboard shortcuts for common actions (save, pause, build)
+- **Hotkeys/Shortcuts**: Keyboard shortcuts for common actions (save, pause, build, speed toggle)
 - **Resource Caps**: Optional storage limits with upgrade system
 - **Auto-Combat Toggle**: Automatically engage enemies when fleet is strong enough
 - **Undo Last Action**: Ability to undo recent purchases/research (within time limit)
