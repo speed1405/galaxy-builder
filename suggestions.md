@@ -29,9 +29,30 @@ This document contains ideas and suggestions for future development of the Galax
 - **Territory Control**: Claim and defend sectors for passive bonuses
 - **Expeditions**: Send fleets on timed missions for rewards
 
+### 5. Game Options/Settings System
+- **Settings Menu**: Dedicated interface for game configuration
+- **Auto-Save Control**: Adjust auto-save interval or disable/enable
+- **Game Speed**: Slow/Normal/Fast/Paused modes for better control
+- **Notification Preferences**: Configure alerts for resources, combat, and milestones
+- **Display Options**: Toggle resource rates, tooltips, and UI elements
+- **Accessibility**: Colorblind modes, font size adjustments, reduced motion
+- **Audio Settings**: Volume controls for sound effects and music (when implemented)
+- **Performance Options**: Reduce visual effects for better performance
+- **Confirmation Dialogs**: Optional confirmations for important actions (reset, bulk purchases)
+
+### 6. Quality of Life Improvements
+- **Bulk Actions**: Build multiple buildings/ships at once with quantity selector
+- **Offline Progress**: Calculate and award resources earned while away (with caps)
+- **Speed Controls**: Quick toggle buttons for game speed adjustment
+- **Hotkeys/Shortcuts**: Keyboard shortcuts for common actions (save, pause, build)
+- **Resource Caps**: Optional storage limits with upgrade system
+- **Auto-Combat Toggle**: Automatically engage enemies when fleet is strong enough
+- **Undo Last Action**: Ability to undo recent purchases/research (within time limit)
+- **Goal Tracker**: Show next unlock requirements and progress to milestones
+
 ## Medium Priority Features
 
-### 5. More Building Types
+### 7. More Building Types
 - **Refineries**: Convert resources into more valuable ones
 - **Defense Platforms**: Protect against enemy raids
 - **Factories**: Automated ship production
@@ -39,21 +60,21 @@ This document contains ideas and suggestions for future development of the Galax
 - **Habitats**: Population system for additional workers
 - **Research Accelerators**: Boost research point generation
 
-### 6. Advanced Ship Types
+### 8. Advanced Ship Types
 - **Support Ships**: Heal or buff other ships in combat
 - **Stealth Ships**: Special reconnaissance and sabotage missions
 - **Carriers**: Launch fighter squadrons
 - **Mining Ships**: Passive resource collection
 - **Colony Ships**: Establish outposts on new worlds
 
-### 7. Resource Management Improvements
+### 9. Resource Management Improvements
 - **Resource Storage Caps**: Add warehouses/silos for increased capacity
 - **Resource Conversion**: Exchange resources at varying rates
 - **Import/Export**: Trade with AI factions
 - **Resource Nodes**: Depletable sources that require expansion
 - **Refining Chains**: Multi-step production processes
 
-### 8. Achievements System
+### 10. Achievements System
 - **Progress Tracking**: Track various milestones and statistics
 - **Achievement Rewards**: Grant bonuses for completion
 - **Hidden Achievements**: Secret goals to discover
@@ -62,7 +83,7 @@ This document contains ideas and suggestions for future development of the Galax
 
 ## Lower Priority / Polish Features
 
-### 9. UI/UX Enhancements
+### 11. UI/UX Enhancements
 - **Tooltips**: Detailed hover information for all elements
 - **Keyboard Shortcuts**: Quick access to common actions
 - **Notifications**: Alert system for important events
@@ -71,45 +92,37 @@ This document contains ideas and suggestions for future development of the Galax
 - **Sound Effects**: Audio feedback for actions and events
 - **Music**: Background soundtrack with volume controls
 
-### 10. Statistics and Analytics
+### 12. Statistics and Analytics
 - **Dashboard**: Overview of all game statistics
 - **Charts/Graphs**: Visualize resource production over time
 - **Efficiency Metrics**: Show optimal strategies
 - **Leaderboards**: Compare progress with other players (if multiplayer)
 - **Export Stats**: Download game data as CSV/JSON
 
-### 11. Content Additions
+### 13. Content Additions
 - **More Enemy Types**: Diverse factions with unique abilities
 - **Story Mode**: Narrative campaign with missions
 - **Challenges**: Time-limited scenarios with special rules
 - **Seasonal Events**: Temporary content with exclusive rewards
 - **Random Galaxy Generation**: Procedurally generated maps
 
-### 12. Quality of Life
-- **Bulk Actions**: Build multiple buildings/ships at once
-- **Auto-Combat**: Option to automatically engage enemies
-- **Speed Controls**: Adjust game speed (slow/normal/fast)
-- **Offline Progress**: Calculate resources earned while away
-- **Import/Export Saves**: Share or backup save files
-- **Settings Menu**: Configure various game options
-
 ## Technical Improvements
 
-### 13. Code Architecture
+### 14. Code Architecture
 - **Module System**: Split game.js into separate modules
 - **State Management**: Implement proper state management pattern
 - **TypeScript**: Convert to TypeScript for better type safety
 - **Unit Tests**: Add comprehensive test coverage
 - **Performance Optimization**: Reduce DOM updates, optimize calculations
 
-### 14. Advanced Features
+### 15. Advanced Features
 - **Multiplayer**: Cooperative or competitive gameplay
 - **Cloud Saves**: Sync progress across devices
 - **Mobile App**: Native mobile version
 - **Modding Support**: Allow community-created content
 - **API**: RESTful API for external tools
 
-### 15. Balancing and Tuning
+### 16. Balancing and Tuning
 - **Economic Balance**: Adjust costs, production rates, and rewards
 - **Difficulty Curve**: Ensure smooth progression throughout game
 - **Endgame Content**: Add meaningful goals for late-game players
@@ -117,7 +130,7 @@ This document contains ideas and suggestions for future development of the Galax
 
 ## Community Features
 
-### 16. Social Integration
+### 17. Social Integration
 - **Share Progress**: Post achievements to social media
 - **Friend System**: Add and compete with friends
 - **Guilds/Alliances**: Team up with other players
@@ -126,7 +139,7 @@ This document contains ideas and suggestions for future development of the Galax
 
 ## Monetization (If Applicable)
 
-### 17. Optional Premium Features
+### 18. Optional Premium Features
 - **Cosmetic Skins**: Visual customization (ships, buildings, UI)
 - **Quality of Life Packs**: Convenience features (auto-save slots, etc.)
 - **Support the Developer**: Tip jar or premium version
@@ -134,7 +147,7 @@ This document contains ideas and suggestions for future development of the Galax
 
 ## Documentation
 
-### 18. Player Resources
+### 19. Player Resources
 - **Tutorial System**: Interactive guide for new players
 - **Wiki/Guide**: Comprehensive game documentation
 - **FAQ**: Common questions and answers
@@ -152,9 +165,9 @@ This section can be populated with suggestions from the community:
 
 ## Implementation Priority Order
 
-1. **Phase 1 (Core Loop Enhancement)**: Prestige System, More Technologies, Enhanced Combat
-2. **Phase 2 (Content Expansion)**: Exploration, More Buildings/Ships, Achievements
-3. **Phase 3 (Polish)**: UI/UX Improvements, Statistics, Quality of Life
+1. **Phase 1 (Core Loop Enhancement)**: Prestige System, More Technologies, Enhanced Combat, Exploration, Game Options/Settings
+2. **Phase 2 (Content Expansion)**: Quality of Life Improvements, More Buildings/Ships, Achievements  
+3. **Phase 3 (Polish)**: UI/UX Improvements, Statistics, Resource Management, Content Additions
 4. **Phase 4 (Community)**: Multiplayer/Social Features, Modding Support
 
 ---
