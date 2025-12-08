@@ -43,7 +43,7 @@ This document contains ideas and suggestions for future development of the Galax
 ### 6. Quality of Life Improvements
 - **Bulk Actions**: Build multiple buildings/ships at once with quantity selector
 - **Offline Progress**: Calculate and award resources earned while away (with caps)
-- **Hotkeys/Shortcuts**: Keyboard shortcuts for common actions (save, pause, build, speed toggle)
+- **Keyboard Shortcuts**: Quick access for common actions (save, pause, build)
 - **Resource Caps**: Optional storage limits with upgrade system
 - **Auto-Combat Toggle**: Automatically engage enemies when fleet is strong enough
 - **Undo Last Action**: Ability to undo recent purchases/research (within time limit)
