@@ -1,0 +1,358 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #e4e4e4;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.game-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+header h1 {
+    font-size: 3em;
+    color: #00d9ff;
+    text-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    font-size: 1.2em;
+    color: #a8dadc;
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.panel {
+    background: rgba(15, 52, 96, 0.6);
+    border: 2px solid #00d9ff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.panel h2 {
+    color: #00d9ff;
+    margin-bottom: 15px;
+    border-bottom: 2px solid rgba(0, 217, 255, 0.3);
+    padding-bottom: 10px;
+}
+
+/* Resources */
+.resource-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.resource {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.resource-name {
+    font-weight: bold;
+    color: #00d9ff;
+}
+
+.resource-value {
+    font-size: 1.2em;
+    color: #ffd700;
+    margin: 0 10px;
+}
+
+.resource-rate {
+    color: #7fff00;
+    font-size: 0.9em;
+}
+
+/* Buildings */
+.buildings-grid,
+.research-grid,
+.ships-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.building-item,
+.research-item,
+.ship-item {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid rgba(0, 217, 255, 0.3);
+}
+
+.building-item h3,
+.research-item h3,
+.ship-item h3 {
+    color: #00d9ff;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+}
+
+.building-item p,
+.research-item p,
+.ship-item p {
+    color: #a8dadc;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.building-item button,
+.research-item button,
+.ship-item button {
+    background: linear-gradient(135deg, #00d9ff 0%, #0088cc 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 10px;
+    transition: all 0.3s;
+}
+
+.building-item button:hover,
+.research-item button:hover,
+.ship-item button:hover {
+    background: linear-gradient(135deg, #00eaff 0%, #00a8ff 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 217, 255, 0.4);
+}
+
+.building-item button:disabled,
+.research-item button:disabled,
+.ship-item button:disabled {
+    background: #555;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.building-count,
+.ship-count {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.researched {
+    background: rgba(0, 128, 0, 0.3);
+    border-color: #7fff00;
+}
+
+.researched h3 {
+    color: #7fff00;
+}
+
+/* Ships */
+.ships-content {
+    display: grid;
+    gap: 20px;
+}
+
+.fleet-info {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.fleet-info h3 {
+    color: #00d9ff;
+    margin-bottom: 10px;
+}
+
+#fleet-display {
+    display: grid;
+    gap: 5px;
+}
+
+.fleet-ship {
+    color: #a8dadc;
+    padding: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+/* Combat */
+.combat-content {
+    display: grid;
+    gap: 15px;
+}
+
+.combat-info {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.combat-info p {
+    margin-bottom: 8px;
+    font-size: 1.1em;
+}
+
+.enemies-list {
+    display: grid;
+    gap: 10px;
+}
+
+.enemy-item {
+    background: rgba(128, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 0, 0, 0.5);
+}
+
+.enemy-item h3 {
+    color: #ff6b6b;
+    margin-bottom: 8px;
+}
+
+.enemy-item p {
+    color: #a8dadc;
+    margin-bottom: 5px;
+}
+
+.enemy-item button {
+    background: linear-gradient(135deg, #ff6b6b 0%, #cc0000 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 10px;
+    transition: all 0.3s;
+}
+
+.enemy-item button:hover {
+    background: linear-gradient(135deg, #ff8888 0%, #ff0000 100%);
+    transform: translateY(-2px);
+}
+
+.enemy-item button:disabled {
+    background: #555;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.combat-log {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.combat-log h3 {
+    color: #00d9ff;
+    margin-bottom: 10px;
+}
+
+#log-messages {
+    display: grid;
+    gap: 5px;
+}
+
+.log-message {
+    padding: 5px;
+    border-left: 3px solid #00d9ff;
+    padding-left: 10px;
+    font-size: 0.9em;
+}
+
+.log-victory {
+    border-left-color: #7fff00;
+    color: #7fff00;
+}
+
+.log-defeat {
+    border-left-color: #ff6b6b;
+    color: #ff6b6b;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+.control-btn {
+    background: linear-gradient(135deg, #00d9ff 0%, #0088cc 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1em;
+    margin: 0 10px;
+    transition: all 0.3s;
+}
+
+.control-btn:hover {
+    background: linear-gradient(135deg, #00eaff 0%, #00a8ff 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 217, 255, 0.4);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #00d9ff;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00eaff;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+    
+    header h1 {
+        font-size: 2em;
+    }
+    
+    .control-btn {
+        margin: 5px;
+        padding: 10px 20px;
+    }
+}
