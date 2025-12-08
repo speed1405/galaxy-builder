@@ -90,10 +90,98 @@
         </div>
 
         <footer>
-            <button id="save-btn" class="control-btn">💾 Save Game</button>
-            <button id="load-btn" class="control-btn">📂 Load Game</button>
-            <button id="reset-btn" class="control-btn">🔄 Reset Game</button>
+            <div class="control-buttons">
+                <button id="save-btn" class="control-btn">💾 Save Game</button>
+                <button id="load-btn" class="control-btn">📂 Load Game</button>
+                <button id="reset-btn" class="control-btn">🔄 Reset Game</button>
+                <button onclick="toggleSettings()" class="control-btn">⚙️ Settings</button>
+            </div>
+            <div class="speed-controls">
+                <span>Speed: </span>
+                <button onclick="setGameSpeed(0)" class="speed-btn">⏸ Pause</button>
+                <button onclick="setGameSpeed(0.5)" class="speed-btn">🐌 Slow</button>
+                <button onclick="setGameSpeed(1)" class="speed-btn">▶️ Normal</button>
+                <button onclick="setGameSpeed(2)" class="speed-btn">⏩ Fast</button>
+                <span id="speed-display" class="speed-display">Normal (1x)</span>
+            </div>
         </footer>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Game Settings</h2>
+                <button onclick="toggleSettings()" class="close-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <h3>Auto-Save</h3>
+                    <label>
+                        <input type="checkbox" id="setting-autosave" 
+                               onchange="applySetting('autoSaveEnabled', this.checked)">
+                        Enable Auto-Save
+                    </label>
+                    <label>
+                        Interval (seconds):
+                        <input type="number" id="setting-autosave-interval" min="10" max="300" 
+                               onchange="applySetting('autoSaveInterval', parseInt(this.value))">
+                    </label>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>Display</h3>
+                    <label>
+                        <input type="checkbox" id="setting-resource-rates" 
+                               onchange="applySetting('showResourceRates', this.checked)">
+                        Show Resource Production Rates
+                    </label>
+                    <label>
+                        <input type="checkbox" id="setting-notifications" 
+                               onchange="applySetting('showNotifications', this.checked)">
+                        Show Notifications
+                    </label>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>Confirmations</h3>
+                    <label>
+                        <input type="checkbox" id="setting-confirm-reset" 
+                               onchange="applySetting('confirmReset', this.checked)">
+                        Confirm Before Reset
+                    </label>
+                    <label>
+                        <input type="checkbox" id="setting-confirm-bulk" 
+                               onchange="applySetting('confirmBulkActions', this.checked)">
+                        Confirm Bulk Actions
+                    </label>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>Gameplay</h3>
+                    <label>
+                        <input type="checkbox" id="setting-autocombat" 
+                               onchange="applySetting('autoCombatEnabled', this.checked)">
+                        Auto-Combat (Automatically attacks when safe)
+                    </label>
+                    <label>
+                        <input type="checkbox" id="setting-offline-progress" 
+                               onchange="applySetting('offlineProgressEnabled', this.checked)">
+                        Offline Progress (max 4 hours)
+                    </label>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>Keyboard Shortcuts</h3>
+                    <p><kbd>P</kbd> - Pause/Unpause</p>
+                    <p><kbd>1</kbd> - Slow Speed</p>
+                    <p><kbd>2</kbd> - Normal Speed</p>
+                    <p><kbd>3</kbd> - Fast Speed</p>
+                    <p><kbd>O</kbd> - Open Settings</p>
+                    <p><kbd>Ctrl+S</kbd> - Save Game</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="game.js"></script>
