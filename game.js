@@ -4,7 +4,7 @@
 const gameConfig = {
     combatDefeatLossRate: 0.1, // Lose 10% of fleet on combat defeat
     gameLoopInterval: 100, // Game loop update interval in ms
-    autoSaveInterval: 30000, // Auto-save interval in ms
+    autoSaveInterval: 30000, // Default auto-save interval in ms (30 seconds)
     autoCombatSafetyMargin: 1.2, // Require 20% more power than enemy for auto-combat
     offlineProgressCapHours: 4, // Maximum hours of offline progress
     minOfflineProgressMs: 60000 // Minimum time away before offline progress applies (1 minute)
@@ -18,10 +18,18 @@ const speedDisplayNames = {
     2: 'Fast (2x)'
 };
 
+// Speed names for combat log (without multiplier info)
+const speedLogNames = {
+    0: 'Paused',
+    0.5: 'Slow',
+    1: 'Normal',
+    2: 'Fast'
+};
+
 // Game Settings (User Configurable)
 const gameSettings = {
     autoSaveEnabled: true,
-    autoSaveInterval: 30, // seconds
+    autoSaveInterval: 30, // in seconds (note: different unit from gameConfig.autoSaveInterval which is in ms)
     gameSpeed: 1, // 0=paused, 0.5=slow, 1=normal, 2=fast
     showResourceRates: true,
     showNotifications: true,
@@ -665,6 +673,13 @@ function bulkBuildBuilding(buildingKey, count) {
         return;
     }
     
+    // Confirm bulk action if setting is enabled
+    if (gameSettings.confirmBulkActions && count > 1) {
+        if (!confirm(`Build ${count} ${building.name}(s)?`)) {
+            return;
+        }
+    }
+    
     let built = 0;
     for (let i = 0; i < count; i++) {
         const cost = getBuildingCost(buildingKey);
@@ -699,6 +714,13 @@ function bulkBuildShip(shipKey, count) {
     if (!meetsRequirements(ship.requires)) {
         addCombatLog('Research requirement not met!', 'defeat');
         return;
+    }
+    
+    // Confirm bulk action if setting is enabled
+    if (gameSettings.confirmBulkActions && count > 1) {
+        if (!confirm(`Build ${count} ${ship.name}(s)?`)) {
+            return;
+        }
     }
     
     let built = 0;
@@ -742,8 +764,9 @@ function loadSettings() {
 function toggleSettings() {
     const modal = document.getElementById('settings-modal');
     if (modal) {
-        modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
-        if (modal.style.display === 'block') {
+        const isVisible = modal.style.display === 'block';
+        modal.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible) {
             updateSettingsUI();
         }
     }
@@ -770,7 +793,9 @@ function applySetting(settingName, value) {
     
     if (settingName === 'autoSaveInterval') {
         // Restart auto-save timer with new interval
-        clearInterval(window.autoSaveTimer);
+        if (window.autoSaveTimer) {
+            clearInterval(window.autoSaveTimer);
+        }
         if (gameSettings.autoSaveEnabled) {
             window.autoSaveTimer = setInterval(saveGame, gameSettings.autoSaveInterval * 1000);
         }
@@ -787,8 +812,8 @@ function setGameSpeed(speed) {
     saveSettings();
     updateSpeedDisplay();
     
-    const speedName = speedDisplayNames[speed] || `${speed}x`;
-    addCombatLog(`Game speed: ${speedName.replace(/\s*\([^)]*\)/, '')}`, 'victory');
+    const speedName = speedLogNames[speed] || `${speed}x`;
+    addCombatLog(`Game speed: ${speedName}`, 'victory');
 }
 
 // Update speed display
@@ -803,8 +828,10 @@ function updateSpeedDisplay() {
 
 // Keyboard shortcuts
 function handleKeyboardShortcut(event) {
-    // Don't trigger if user is typing in an input
-    if (event.target.tagName === 'INPUT') return;
+    // Don't trigger if user is typing in form elements
+    const isFormElement = ['INPUT', 'TEXTAREA'].includes(event.target.tagName) || 
+                         event.target.contentEditable === 'true';
+    if (isFormElement) return;
     
     switch(event.key.toLowerCase()) {
         case 's':
