@@ -4,7 +4,18 @@
 const gameConfig = {
     combatDefeatLossRate: 0.1, // Lose 10% of fleet on combat defeat
     gameLoopInterval: 100, // Game loop update interval in ms
-    autoSaveInterval: 30000 // Auto-save interval in ms
+    autoSaveInterval: 30000, // Auto-save interval in ms
+    autoCombatSafetyMargin: 1.2, // Require 20% more power than enemy for auto-combat
+    offlineProgressCapHours: 4, // Maximum hours of offline progress
+    minOfflineProgressMs: 60000 // Minimum time away before offline progress applies (1 minute)
+};
+
+// Speed display names
+const speedDisplayNames = {
+    0: 'Paused',
+    0.5: 'Slow (0.5x)',
+    1: 'Normal (1x)',
+    2: 'Fast (2x)'
 };
 
 // Game Settings (User Configurable)
@@ -575,11 +586,14 @@ function loadGame() {
 
 // Reset game
 function resetGame() {
-    const shouldReset = gameSettings.confirmReset 
-        ? confirm('Are you sure you want to reset the game? All progress will be lost!')
-        : true;
+    if (!gameSettings.confirmReset) {
+        localStorage.removeItem('galaxyBuilderSave');
+        localStorage.removeItem('galaxyBuilderSettings');
+        location.reload();
+        return;
+    }
     
-    if (shouldReset) {
+    if (confirm('Are you sure you want to reset the game? All progress will be lost!')) {
         localStorage.removeItem('galaxyBuilderSave');
         localStorage.removeItem('galaxyBuilderSettings');
         location.reload();
@@ -590,10 +604,11 @@ function resetGame() {
 function autoEngageCombat() {
     const fleetPower = calculateFleetPower();
     
-    // Find the strongest enemy we can defeat
+    // Find the strongest enemy we can defeat with safety margin
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
-        if (fleetPower >= enemy.power * 1.2) { // 20% safety margin
+        const requiredPower = enemy.power * gameConfig.autoCombatSafetyMargin;
+        if (fleetPower >= requiredPower) {
             attackEnemy(i);
             break;
         }
@@ -602,11 +617,12 @@ function autoEngageCombat() {
 
 // Calculate offline progress
 function calculateOfflineProgress(timeAway) {
-    if (!gameSettings.offlineProgressEnabled || timeAway < 60000) { // Less than 1 minute
+    if (!gameSettings.offlineProgressEnabled || timeAway < gameConfig.minOfflineProgressMs) {
         return null;
     }
     
-    const secondsAway = Math.min(timeAway / 1000, 3600 * 4); // Cap at 4 hours
+    const maxOfflineSeconds = gameConfig.offlineProgressCapHours * 3600;
+    const secondsAway = Math.min(timeAway / 1000, maxOfflineSeconds);
     const production = calculateProduction();
     const gains = {};
     
@@ -770,15 +786,14 @@ function setGameSpeed(speed) {
     gameSettings.gameSpeed = speed;
     saveSettings();
     updateSpeedDisplay();
-    addCombatLog(`Game speed: ${speed === 0 ? 'Paused' : speed === 0.5 ? 'Slow' : speed === 1 ? 'Normal' : 'Fast'}`, 'victory');
+    
+    const speedName = speedDisplayNames[speed] || `${speed}x`;
+    addCombatLog(`Game speed: ${speedName.replace(/\s*\([^)]*\)/, '')}`, 'victory');
 }
 
 // Update speed display
 function updateSpeedDisplay() {
-    const speedText = gameSettings.gameSpeed === 0 ? 'Paused' : 
-                      gameSettings.gameSpeed === 0.5 ? 'Slow (0.5x)' : 
-                      gameSettings.gameSpeed === 1 ? 'Normal (1x)' : 
-                      gameSettings.gameSpeed === 2 ? 'Fast (2x)' : `${gameSettings.gameSpeed}x`;
+    const speedText = speedDisplayNames[gameSettings.gameSpeed] || `${gameSettings.gameSpeed}x`;
     
     const speedDisplay = document.getElementById('speed-display');
     if (speedDisplay) {
