@@ -7,7 +7,9 @@ const gameConfig = {
     autoSaveInterval: 30000, // Default auto-save interval in ms (30 seconds)
     autoCombatSafetyMargin: 1.2, // Require 20% more power than enemy for auto-combat
     offlineProgressCapHours: 4, // Maximum hours of offline progress
-    minOfflineProgressMs: 60000 // Minimum time away before offline progress applies (1 minute)
+    minOfflineProgressMs: 60000, // Minimum time away before offline progress applies (1 minute)
+    statisticsRecordInterval: 60000, // Record production snapshot every 60 seconds
+    metalToEnergyRatio: 2 // Refinery: 2 metal -> 1 energy
 };
 
 // Speed display names
@@ -36,7 +38,12 @@ const gameSettings = {
     confirmReset: true,
     confirmBulkActions: true,
     autoCombatEnabled: false,
-    offlineProgressEnabled: true
+    offlineProgressEnabled: true,
+    theme: 'dark',
+    soundEffectsEnabled: false,
+    musicEnabled: false,
+    masterVolume: 50,
+    showTooltips: true
 };
 
 // Game State
@@ -156,6 +163,34 @@ const gameState = {
             expeditionsCompleted: 0,
             coloniesEstablished: 0
         }
+    },
+    statistics: {
+        productionHistory: [],
+        lastRecordTime: 0,
+        totalPlayTime: 0,
+        sessionStartTime: Date.now()
+    },
+    challenges: {
+        active: null,
+        completed: [],
+        available: []
+    },
+    story: {
+        currentChapter: 0,
+        currentScene: 0,
+        choicesMade: [],
+        unlockedChapters: [0]
+    },
+    seasonalEvents: {
+        active: null,
+        completed: [],
+        nextEventTime: 0
+    },
+    galaxy: {
+        seed: Math.floor(Math.random() * 1000000),
+        generated: false,
+        size: 'medium',
+        density: 'normal'
     },
     lastUpdate: Date.now()
 };
@@ -497,19 +532,40 @@ const ships = {
 
 // Enemy Definitions
 const enemies = [
-    { name: 'Space Pirates', power: 20, reward: { metal: 50, energy: 30, credits: 100 }, type: 'normal' },
-    { name: 'Rogue Drones', power: 50, reward: { metal: 100, energy: 80, credits: 200 }, type: 'normal' },
-    { name: 'Rebel Fleet', power: 150, reward: { metal: 250, energy: 200, credits: 500 }, type: 'normal' },
-    { name: 'Alien Raiders', power: 300, reward: { metal: 500, energy: 400, credits: 1000 }, type: 'normal' },
-    { name: 'Dark Empire Scout', power: 600, reward: { metal: 1000, energy: 800, credits: 2000 }, type: 'normal' },
+    { name: 'Space Pirates', power: 20, reward: { metal: 50, energy: 30, credits: 100 }, type: 'normal', 
+      abilities: ['Fast Attack'] },
+    { name: 'Rogue Drones', power: 50, reward: { metal: 100, energy: 80, credits: 200 }, type: 'normal',
+      abilities: ['Self-Repair'] },
+    { name: 'Rebel Fleet', power: 150, reward: { metal: 250, energy: 200, credits: 500 }, type: 'normal',
+      abilities: ['Tactical Formation'] },
+    { name: 'Alien Raiders', power: 300, reward: { metal: 500, energy: 400, credits: 1000 }, type: 'normal',
+      abilities: ['Energy Drain'] },
+    { name: 'Dark Empire Scout', power: 600, reward: { metal: 1000, energy: 800, credits: 2000 }, type: 'normal',
+      abilities: ['Stealth Cloak'] },
+    { name: 'Mercenary Squadron', power: 400, reward: { metal: 700, energy: 600, credits: 1500 }, type: 'elite',
+      abilities: ['Precision Strike', 'Shield Boost'],
+      description: '⚡ ELITE: Professional fighters with advanced tactics' },
+    { name: 'Crystalline Horde', power: 800, reward: { metal: 1500, energy: 1200, credits: 2500, research: 100 }, type: 'elite',
+      abilities: ['Energy Absorption', 'Crystal Armor'],
+      description: '⚡ ELITE: Energy-based lifeforms with reflective defenses' },
     { name: 'Void Leviathan', power: 1200, reward: { metal: 2500, energy: 2000, credits: 5000 }, type: 'boss', 
+      abilities: ['Regeneration', 'Area Attack'],
       description: '⚔️ BOSS: Massive creature with regenerative abilities' },
     { name: 'Ancient Guardian', power: 2500, reward: { metal: 5000, energy: 4000, credits: 10000 }, type: 'boss',
+      abilities: ['Ancient Technology', 'Phase Shield'],
       description: '⚔️ BOSS: Ancient protector with devastating weapons' },
     { name: 'Void Titan', power: 5000, reward: { metal: 10000, energy: 8000, credits: 20000, research: 1000 }, type: 'boss',
+      abilities: ['Void Pulse', 'Matter Annihilation'],
       description: '⚔️ BOSS: Colossal entity from the void between stars' },
     { name: 'Cosmic Devourer', power: 10000, reward: { metal: 25000, energy: 20000, credits: 50000, research: 2500 }, type: 'boss',
-      description: '⚔️ BOSS: Ultimate threat consuming entire star systems' }
+      abilities: ['Consume Reality', 'Dimensional Rift'],
+      description: '⚔️ BOSS: Ultimate threat consuming entire star systems' },
+    { name: 'Quantum Swarm', power: 1500, reward: { metal: 3000, energy: 2500, credits: 4000, research: 200 }, type: 'elite',
+      abilities: ['Quantum Entanglement', 'Rapid Reproduction'],
+      description: '⚡ ELITE: Hivemind entities that exist in multiple dimensions' },
+    { name: 'Temporal Raiders', power: 3500, reward: { metal: 7000, energy: 6000, credits: 12000, research: 500 }, type: 'elite',
+      abilities: ['Time Dilation', 'Future Knowledge'],
+      description: '⚡ ELITE: Time-traveling marauders from the future' }
 ];
 
 // Prestige Upgrade Definitions
@@ -807,6 +863,229 @@ const resourceNodeTypes = {
 };
 
 
+// Challenges Definitions
+const challenges = {
+    speedRunner: {
+        name: 'Speed Runner',
+        description: 'Defeat 50 enemies in 10 minutes',
+        type: 'timed',
+        duration: 600, // seconds
+        requirement: { enemiesDefeated: 50 },
+        reward: { darkMatter: 3, credits: 5000 },
+        difficulty: 'medium'
+    },
+    pacifist: {
+        name: 'Peaceful Expansion',
+        description: 'Reach 50,000 total resources without defeating any enemies',
+        type: 'condition',
+        requirement: { totalResources: 50000, enemiesDefeated: 0 },
+        reward: { darkMatter: 2, research: 500 },
+        difficulty: 'hard'
+    },
+    researcher: {
+        name: 'Research Rush',
+        description: 'Complete 10 research projects in 15 minutes',
+        type: 'timed',
+        duration: 900,
+        requirement: { researchCompleted: 10 },
+        reward: { research: 1000, darkMatter: 2 },
+        difficulty: 'easy'
+    },
+    builder: {
+        name: 'Construction Frenzy',
+        description: 'Build 100 total buildings',
+        type: 'condition',
+        requirement: { buildingsBuilt: 100 },
+        reward: { metal: 5000, energy: 5000, credits: 10000 },
+        difficulty: 'medium'
+    },
+    explorer: {
+        name: 'Galactic Cartographer',
+        description: 'Explore 15 sectors in 20 minutes',
+        type: 'timed',
+        duration: 1200,
+        requirement: { sectorsExplored: 15 },
+        reward: { darkMatter: 4, credits: 8000 },
+        difficulty: 'hard'
+    },
+    fleetCommander: {
+        name: 'Fleet Commander',
+        description: 'Build 200 total ships',
+        type: 'condition',
+        requirement: { shipsBuilt: 200 },
+        reward: { metal: 10000, energy: 8000, darkMatter: 3 },
+        difficulty: 'medium'
+    },
+    bossHunter: {
+        name: 'Boss Hunter',
+        description: 'Defeat 5 boss enemies',
+        type: 'condition',
+        requirement: { bossesDefeated: 5 },
+        reward: { darkMatter: 10, research: 2000 },
+        difficulty: 'hard'
+    },
+    minimalist: {
+        name: 'Minimalist',
+        description: 'Defeat Void Leviathan with less than 10 total buildings',
+        type: 'condition',
+        requirement: { defeatedVoidLeviathan: true, maxBuildings: 10 },
+        reward: { darkMatter: 5 },
+        difficulty: 'extreme'
+    }
+};
+
+// Story Mode Chapters
+const storyChapters = [
+    {
+        id: 0,
+        title: 'The Beginning',
+        scenes: [
+            {
+                text: 'In the depths of space, your civilization has just discovered the principles of advanced metallurgy. The stars beckon, but the journey ahead is long.',
+                choices: [
+                    { text: 'Focus on resource gathering', effect: { metal: 100 }, nextScene: 1 },
+                    { text: 'Invest in research', effect: { research: 50 }, nextScene: 1 }
+                ]
+            },
+            {
+                text: 'Your people work tirelessly, building the foundation of what will become a galactic empire. But dark forces stir in the void...',
+                choices: [
+                    { text: 'Continue', nextScene: -1, unlockChapter: 1 }
+                ]
+            }
+        ]
+    },
+    {
+        id: 1,
+        title: 'First Contact',
+        requires: { enemiesDefeated: 10 },
+        scenes: [
+            {
+                text: 'Strange ships appear at the edge of your territory. The aliens seem... hostile. Your advisors debate the best course of action.',
+                choices: [
+                    { text: 'Prepare for war', effect: { ships: { fighter: 5 } }, nextScene: 1 },
+                    { text: 'Attempt diplomacy', effect: { credits: 500 }, nextScene: 2 }
+                ]
+            },
+            {
+                text: 'Your fleet engages the enemy. The battle is fierce, but your ships prove superior. The enemy retreats... for now.',
+                choices: [
+                    { text: 'Continue expansion', nextScene: -1, unlockChapter: 2 }
+                ]
+            },
+            {
+                text: 'Your diplomatic overtures are met with suspicion, but eventually they yield results. A shaky trade agreement is formed.',
+                choices: [
+                    { text: 'Focus on trade', nextScene: -1, unlockChapter: 2 }
+                ]
+            }
+        ]
+    },
+    {
+        id: 2,
+        title: 'The Ancient Ruins',
+        requires: { research: 'warpDrive' },
+        scenes: [
+            {
+                text: 'Deep in uncharted space, your explorers discover ruins of an ancient civilization. The technology here could change everything.',
+                choices: [
+                    { text: 'Study the ruins carefully', effect: { research: 500 }, nextScene: 1 },
+                    { text: 'Salvage what you can quickly', effect: { metal: 2000, energy: 1500 }, nextScene: 1 }
+                ]
+            },
+            {
+                text: 'The knowledge gained from the ruins propels your civilization forward. But you sense you are being watched...',
+                choices: [
+                    { text: 'Prepare for what comes next', nextScene: -1, unlockChapter: 3 }
+                ]
+            }
+        ]
+    },
+    {
+        id: 3,
+        title: 'The Void Awakens',
+        requires: { enemiesDefeated: 50 },
+        scenes: [
+            {
+                text: 'Ancient evils stir in the depths of space. The Void Leviathan, dormant for eons, has awakened. Your greatest challenge lies ahead.',
+                choices: [
+                    { text: 'Rally the fleet', effect: { allShips: 10 }, nextScene: 1 }
+                ]
+            },
+            {
+                text: 'The final battle will determine the fate of your empire. Will you rise to become masters of the galaxy, or fall into the endless void?',
+                choices: [
+                    { text: 'Face your destiny', nextScene: -1 }
+                ]
+            }
+        ]
+    }
+];
+
+
+// Seasonal Events Definitions
+const seasonalEvents = {
+    solarFlare: {
+        name: 'Solar Flare',
+        description: 'Intense solar activity increases energy production by 50% for 5 minutes',
+        duration: 300, // seconds
+        effect: { energyBonus: 0.5 },
+        rarity: 'common'
+    },
+    meteorShower: {
+        name: 'Meteor Shower',
+        description: 'Rich meteors provide bonus metal production (+100%) for 5 minutes',
+        duration: 300,
+        effect: { metalBonus: 1.0 },
+        rarity: 'common'
+    },
+    galacticBazaar: {
+        name: 'Galactic Bazaar',
+        description: 'Traders arrive offering better rates (all trades 50% cheaper) for 10 minutes',
+        duration: 600,
+        effect: { tradeBonus: 0.5 },
+        rarity: 'uncommon'
+    },
+    ancientBeacon: {
+        name: 'Ancient Beacon',
+        description: 'Discovered beacon doubles research production for 5 minutes',
+        duration: 300,
+        effect: { researchBonus: 1.0 },
+        rarity: 'uncommon'
+    },
+    cosmicAlignment: {
+        name: 'Cosmic Alignment',
+        description: 'Rare planetary alignment boosts ALL production by 100% for 3 minutes',
+        duration: 180,
+        effect: { allBonus: 1.0 },
+        rarity: 'rare'
+    },
+    darkMatterStorm: {
+        name: 'Dark Matter Storm',
+        description: 'Cosmic storm grants +5 Dark Matter immediately!',
+        duration: 0,
+        effect: { darkMatter: 5 },
+        rarity: 'rare'
+    },
+    peaceAccord: {
+        name: 'Peace Accord',
+        description: 'Temporary peace treaty: no enemy attacks for 10 minutes',
+        duration: 600,
+        effect: { noAttacks: true },
+        rarity: 'uncommon'
+    }
+};
+
+// Galaxy Generation Parameters
+const galaxyTemplates = {
+    tiny: { sectors: 20, resourceMultiplier: 0.8, enemyDensity: 0.5 },
+    small: { sectors: 50, resourceMultiplier: 0.9, enemyDensity: 0.7 },
+    medium: { sectors: 100, resourceMultiplier: 1.0, enemyDensity: 1.0 },
+    large: { sectors: 200, resourceMultiplier: 1.1, enemyDensity: 1.2 },
+    huge: { sectors: 500, resourceMultiplier: 1.2, enemyDensity: 1.5 }
+};
+
+
 // Calculate building cost with scaling
 function getBuildingCost(buildingKey) {
     const building = buildings[buildingKey];
@@ -906,6 +1185,9 @@ function calculateProduction() {
     if (researchBoostLevel > 0) {
         production.research *= 1 + (researchBoostLevel * 0.15);
     }
+    
+    // Apply seasonal event bonuses
+    production = applySeasonalBonuses(production);
     
     return production;
 }
@@ -1402,8 +1684,26 @@ function updateUI() {
         const cost = getBuildingCost(key);
         const canBuild = canAfford(cost) && meetsRequirements(building.requires);
         
+        // Build tooltip text
+        let tooltipText = building.description;
+        if (building.produces && Object.keys(building.produces).length > 0) {
+            tooltipText += `\n\nProduces: ${Object.entries(building.produces).map(([r, a]) => `${a} ${r}/s`).join(', ')}`;
+        }
+        if (building.capBonus) {
+            tooltipText += `\n\nIncreases all resource caps by ${building.capBonus}`;
+        }
+        if (building.defensePower) {
+            tooltipText += `\n\nDefense Power: ${building.defensePower}`;
+        }
+        if (building.refinesPerSecond) {
+            tooltipText += `\n\nConverts ${building.refinesPerSecond * 2} metal → ${building.refinesPerSecond} energy per second`;
+        }
+        if (building.productionBonus) {
+            tooltipText += `\n\nBoosts all production by ${building.productionBonus * 100}%`;
+        }
+        
         const div = document.createElement('div');
-        div.className = 'building-item';
+        div.className = 'building-item tooltip';
         div.innerHTML = `
             <h3>${building.name}</h3>
             <p>${building.description}</p>
@@ -1414,6 +1714,7 @@ function updateUI() {
                 <button onclick="bulkBuildBuilding('${key}', 10)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x10</button>
                 <button onclick="bulkBuildBuilding('${key}', 100)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x100</button>
             </div>
+            ${gameSettings.showTooltips ? `<span class="tooltiptext">${tooltipText.replace(/\n/g, '<br>')}</span>` : ''}
         `;
         buildingsList.appendChild(div);
     }
@@ -1426,12 +1727,13 @@ function updateUI() {
         if (gameState.research[key]) {
             const div = document.createElement('div');
             const category = tech.category ? ` tech-${tech.category}` : '';
-            div.className = `research-item researched${category}`;
+            div.className = `research-item researched${category} tooltip`;
             div.innerHTML = `
                 <h3>${tech.name}</h3>
                 ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
                 <p>${tech.description}</p>
                 <p>✓ Researched</p>
+                ${gameSettings.showTooltips ? `<span class="tooltiptext">Unlocked: ${tech.description}</span>` : ''}
             `;
             researchList.appendChild(div);
         } else if (meetsRequirements(tech.requires)) {
@@ -1453,13 +1755,17 @@ function updateUI() {
             const canResearch = canAfford(displayCost);
             const div = document.createElement('div');
             const category = tech.category ? ` tech-${tech.category}` : '';
-            div.className = `research-item${category}`;
+            
+            let tooltipText = `${tech.description}\n\nRequires: ${tech.requires || 'None'}`;
+            
+            div.className = `research-item${category} tooltip`;
             div.innerHTML = `
                 <h3>${tech.name}</h3>
                 ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
                 <p>${tech.description}</p>
                 <p>Cost: ${Object.entries(displayCost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
                 <button onclick="researchTech('${key}')" ${!canResearch ? 'disabled' : ''}>Research</button>
+                ${gameSettings.showTooltips ? `<span class="tooltiptext">${tooltipText.replace(/\n/g, '<br>')}</span>` : ''}
             `;
             researchList.appendChild(div);
         }
@@ -1473,8 +1779,16 @@ function updateUI() {
         if (!meetsRequirements(ship.requires)) continue;
         
         const canBuild = canAfford(ship.cost) && gameState.buildings.shipyard > 0;
+        
+        let tooltipText = `${ship.description}\n\nPower: ${ship.power}`;
+        if (ship.supportBonus) tooltipText += `\n\nSupport Bonus: +${ship.supportBonus * 100}% fleet effectiveness`;
+        if (ship.carrierBonus) tooltipText += `\n\nCarrier Bonus: +${ship.carrierBonus} virtual fighters`;
+        if (ship.miningBonus) {
+            tooltipText += `\n\nMining: ${Object.entries(ship.miningBonus).map(([r, a]) => `${a} ${r}/s`).join(', ')}`;
+        }
+        
         const div = document.createElement('div');
-        div.className = 'ship-item';
+        div.className = 'ship-item tooltip';
         div.innerHTML = `
             <h3>${ship.name}</h3>
             <p>${ship.description}</p>
@@ -1485,6 +1799,7 @@ function updateUI() {
                 <button onclick="bulkBuildShip('${key}', 10)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x10</button>
                 <button onclick="bulkBuildShip('${key}', 100)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x100</button>
             </div>
+            ${gameSettings.showTooltips ? `<span class="tooltiptext">${tooltipText.replace(/\n/g, '<br>')}</span>` : ''}
         `;
         shipsList.appendChild(div);
     }
@@ -1530,11 +1845,12 @@ function updateUI() {
         const canWin = fleetPower >= enemy.power;
         
         const div = document.createElement('div');
-        div.className = `enemy-item ${enemy.type === 'boss' ? 'boss-enemy' : ''}`;
+        div.className = `enemy-item ${enemy.type === 'boss' ? 'boss-enemy' : enemy.type === 'elite' ? 'enemy-type-elite' : 'enemy-type-normal'}`;
         div.innerHTML = `
             <h3>${enemy.name}</h3>
             ${enemy.description ? `<p class="enemy-description">${enemy.description}</p>` : ''}
             <p>Power: ${enemy.power}</p>
+            ${enemy.abilities ? `<p>Abilities: ${enemy.abilities.map(a => `<span class="enemy-ability">${a}</span>`).join(' ')}</p>` : ''}
             <p>Reward: ${Object.entries(enemy.reward).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
             <p>${canWin ? '✓ Can defeat' : '✗ Too powerful'}</p>
             <button onclick="attackEnemy(${i})" ${fleetPower === 0 ? 'disabled' : ''}>Attack</button>
@@ -1642,6 +1958,35 @@ function updateUI() {
     updateConversionDisplay();
     updateTradingDisplay();
     updateResourceNodesDisplay();
+    updateStatisticsDashboard();
+    updateChallengesDisplay();
+    updateStoryDisplay();
+    updateSeasonalEventDisplay();
+}
+
+function updateSeasonalEventDisplay() {
+    const panel = document.getElementById('seasonal-events-panel');
+    const display = document.getElementById('seasonal-event-display');
+    
+    if (!panel || !display) return;
+    
+    const eventInfo = displaySeasonalEvent();
+    
+    if (eventInfo) {
+        panel.style.display = 'block';
+        const minutes = Math.floor(eventInfo.timeRemaining / 60);
+        const seconds = eventInfo.timeRemaining % 60;
+        
+        display.innerHTML = `
+            <div style="background: rgba(255, 193, 7, 0.2); padding: 15px; border-radius: 8px; border: 2px solid #ffc107;">
+                <h3 style="color: #ffc107; margin-bottom: 10px;">🎉 ${eventInfo.name}</h3>
+                <p style="color: #a8dadc; margin-bottom: 10px;">${eventInfo.description}</p>
+                <p style="color: #ffd700; font-weight: bold;">⏱️ Time Remaining: ${minutes}m ${seconds}s</p>
+            </div>
+        `;
+    } else {
+        panel.style.display = 'none';
+    }
 }
 
 // Achievement System Functions
@@ -1944,14 +2289,557 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+// Theme Management
+function changeTheme(themeName) {
+    // Remove all theme classes
+    document.body.classList.remove('theme-dark', 'theme-light', 'theme-classic', 'theme-green');
+    
+    // Add new theme class
+    if (themeName !== 'dark') {
+        document.body.classList.add(`theme-${themeName}`);
+    }
+    
+    gameSettings.theme = themeName;
+    saveSettings();
+    showNotification(`Theme changed to ${themeName}`, 'success');
+}
+
+// Statistics Functions
+function recordProductionSnapshot() {
+    const now = Date.now();
+    if (now - gameState.statistics.lastRecordTime < gameConfig.statisticsRecordInterval) return; // Record every minute
+    
+    const production = calculateProduction();
+    const snapshot = {
+        timestamp: now,
+        metal: production.metal,
+        energy: production.energy,
+        research: production.research,
+        credits: production.credits,
+        fleetPower: calculateFleetPower()
+    };
+    
+    gameState.statistics.productionHistory.push(snapshot);
+    
+    // Keep only last 30 snapshots (30 minutes of data)
+    if (gameState.statistics.productionHistory.length > 30) {
+        gameState.statistics.productionHistory.shift();
+    }
+    
+    gameState.statistics.lastRecordTime = now;
+}
+
+function updateStatisticsDashboard() {
+    const statsDisplay = document.getElementById('stats-dashboard');
+    if (!statsDisplay) return;
+    
+    const totalResources = gameState.resources.metal + gameState.resources.energy + 
+                          gameState.resources.research + gameState.resources.credits;
+    const totalBuildings = Object.values(gameState.buildings).reduce((a, b) => a + b, 0);
+    const totalShips = Object.values(gameState.ships).reduce((a, b) => a + b, 0);
+    const playTime = Math.floor((gameState.statistics.totalPlayTime + (Date.now() - gameState.statistics.sessionStartTime)) / 1000);
+    const playHours = Math.floor(playTime / 3600);
+    const playMinutes = Math.floor((playTime % 3600) / 60);
+    
+    const stats = [
+        { label: 'Total Resources', value: totalResources.toLocaleString() },
+        { label: 'Total Buildings', value: totalBuildings },
+        { label: 'Total Ships', value: totalShips },
+        { label: 'Fleet Power', value: calculateFleetPower() },
+        { label: 'Enemies Defeated', value: gameState.enemiesDefeated },
+        { label: 'Sectors Explored', value: gameState.exploration.sectorsExplored },
+        { label: 'Technologies Researched', value: Object.values(gameState.research).filter(v => v).length },
+        { label: 'Play Time', value: `${playHours}h ${playMinutes}m` }
+    ];
+    
+    statsDisplay.innerHTML = stats.map(stat => `
+        <div class="stat-card">
+            <h4>${stat.label}</h4>
+            <div class="stat-value">${stat.value}</div>
+        </div>
+    `).join('');
+    
+    updateProductionChart();
+}
+
+function updateProductionChart() {
+    const chartContainer = document.getElementById('production-chart');
+    const chartLabels = document.getElementById('chart-labels');
+    if (!chartContainer) return;
+    
+    const history = gameState.statistics.productionHistory;
+    if (history.length === 0) {
+        chartContainer.innerHTML = '<p style="text-align:center; color:#a8dadc; padding:20px;">Collecting data...</p>';
+        return;
+    }
+    
+    // Get max values for scaling
+    const maxMetal = Math.max(...history.map(h => h.metal), 1);
+    const maxEnergy = Math.max(...history.map(h => h.energy), 1);
+    const maxResearch = Math.max(...history.map(h => h.research), 1);
+    const maxCredits = Math.max(...history.map(h => h.credits), 1);
+    const maxValue = Math.max(maxMetal, maxEnergy, maxResearch, maxCredits);
+    
+    // Create bars for each snapshot
+    chartContainer.innerHTML = history.slice(-10).map((snapshot, index) => {
+        const metalHeight = (snapshot.metal / maxValue) * 100;
+        return `<div class="chart-bar" style="height: ${metalHeight}%" title="Metal: ${snapshot.metal.toFixed(1)}/s"></div>`;
+    }).join('');
+    
+    // Add labels (time ago)
+    if (chartLabels) {
+        chartLabels.innerHTML = '<div style="display:flex; justify-content:space-around; margin-top:10px;">' +
+            '<span class="chart-label">Metal</span>' +
+            '<span class="chart-label">Energy</span>' +
+            '<span class="chart-label">Research</span>' +
+            '<span class="chart-label">Credits</span>' +
+            '</div>';
+    }
+}
+
+function exportStatistics() {
+    const stats = {
+        gameState: {
+            resources: gameState.resources,
+            buildings: gameState.buildings,
+            ships: gameState.ships,
+            research: gameState.research,
+            enemiesDefeated: gameState.enemiesDefeated,
+            prestige: gameState.prestige
+        },
+        statistics: gameState.statistics,
+        achievements: gameState.achievements,
+        timestamp: new Date().toISOString()
+    };
+    
+    const dataStr = JSON.stringify(stats, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `galaxy-builder-stats-${Date.now()}.json`;
+    link.click();
+    
+    URL.revokeObjectURL(url);
+    showNotification('Statistics exported successfully!', 'success');
+}
+
+// Challenge System
+function initializeChallenges() {
+    // Populate available challenges
+    for (const [key, challenge] of Object.entries(challenges)) {
+        if (!gameState.challenges.completed.includes(key)) {
+            gameState.challenges.available.push(key);
+        }
+    }
+}
+
+function startChallenge(challengeKey) {
+    const challenge = challenges[challengeKey];
+    if (!challenge) return;
+    
+    if (gameState.challenges.active) {
+        showNotification('Complete current challenge first!', 'error');
+        return;
+    }
+    
+    gameState.challenges.active = {
+        key: challengeKey,
+        startTime: Date.now(),
+        startState: {
+            enemiesDefeated: gameState.enemiesDefeated,
+            buildingsBuilt: gameState.achievements.stats.totalBuildingsBuilt,
+            shipsBuilt: gameState.achievements.stats.totalShipsBuilt,
+            researchCompleted: gameState.achievements.stats.totalResearchCompleted,
+            sectorsExplored: gameState.exploration.sectorsExplored
+        }
+    };
+    
+    showNotification(`Challenge started: ${challenge.name}`, 'info');
+    updateChallengesDisplay();
+}
+
+function checkChallengeProgress() {
+    if (!gameState.challenges.active) return;
+    
+    const activeKey = gameState.challenges.active.key;
+    const challenge = challenges[activeKey];
+    const startState = gameState.challenges.active.startState;
+    const now = Date.now();
+    
+    // Check if timed challenge expired
+    if (challenge.type === 'timed') {
+        const elapsed = (now - gameState.challenges.active.startTime) / 1000;
+        if (elapsed > challenge.duration) {
+            showNotification(`Challenge failed: ${challenge.name} (time expired)`, 'error');
+            gameState.challenges.active = null;
+            updateChallengesDisplay();
+            return;
+        }
+    }
+    
+    // Check completion conditions
+    let completed = false;
+    
+    if (challenge.requirement.enemiesDefeated !== undefined) {
+        const progress = gameState.enemiesDefeated - startState.enemiesDefeated;
+        if (progress >= challenge.requirement.enemiesDefeated) completed = true;
+    }
+    
+    if (challenge.requirement.buildingsBuilt !== undefined) {
+        const progress = gameState.achievements.stats.totalBuildingsBuilt - startState.buildingsBuilt;
+        if (progress >= challenge.requirement.buildingsBuilt) completed = true;
+    }
+    
+    if (challenge.requirement.shipsBuilt !== undefined) {
+        const progress = gameState.achievements.stats.totalShipsBuilt - startState.shipsBuilt;
+        if (progress >= challenge.requirement.shipsBuilt) completed = true;
+    }
+    
+    if (challenge.requirement.researchCompleted !== undefined) {
+        const progress = gameState.achievements.stats.totalResearchCompleted - startState.researchCompleted;
+        if (progress >= challenge.requirement.researchCompleted) completed = true;
+    }
+    
+    if (challenge.requirement.sectorsExplored !== undefined) {
+        const progress = gameState.exploration.sectorsExplored - startState.sectorsExplored;
+        if (progress >= challenge.requirement.sectorsExplored) completed = true;
+    }
+    
+    if (challenge.requirement.totalResources !== undefined) {
+        const total = gameState.resources.metal + gameState.resources.energy + 
+                     gameState.resources.research + gameState.resources.credits;
+        const enemyCheck = challenge.requirement.enemiesDefeated !== undefined ? 
+                          gameState.enemiesDefeated <= challenge.requirement.enemiesDefeated : true;
+        if (total >= challenge.requirement.totalResources && enemyCheck) completed = true;
+    }
+    
+    if (completed) {
+        // Award rewards
+        for (const [resource, amount] of Object.entries(challenge.reward)) {
+            if (resource === 'darkMatter') {
+                gameState.prestige.darkMatter += amount;
+            } else if (gameState.resources[resource] !== undefined) {
+                gameState.resources[resource] += amount;
+            }
+        }
+        
+        gameState.challenges.completed.push(activeKey);
+        gameState.challenges.available = gameState.challenges.available.filter(k => k !== activeKey);
+        gameState.challenges.active = null;
+        
+        showNotification(`✅ Challenge completed: ${challenge.name}!`, 'achievement');
+        updateChallengesDisplay();
+    }
+}
+
+function updateChallengesDisplay() {
+    const challengesList = document.getElementById('challenges-list');
+    if (!challengesList) return;
+    
+    challengesList.innerHTML = '';
+    
+    // Show active challenge
+    if (gameState.challenges.active) {
+        const activeKey = gameState.challenges.active.key;
+        const challenge = challenges[activeKey];
+        const elapsed = Math.floor((Date.now() - gameState.challenges.active.startTime) / 1000);
+        const timeLeft = challenge.duration ? challenge.duration - elapsed : null;
+        
+        const div = document.createElement('div');
+        div.className = 'challenge-item active';
+        div.innerHTML = `
+            <div class="challenge-header">
+                <span class="challenge-title">${challenge.name} (ACTIVE)</span>
+                <span class="challenge-reward">🏆 Reward: ${Object.entries(challenge.reward).map(([r, a]) => `${a} ${r}`).join(', ')}</span>
+            </div>
+            <p class="challenge-description">${challenge.description}</p>
+            ${timeLeft !== null ? `<p class="challenge-timer">⏱️ Time Remaining: ${Math.floor(timeLeft / 60)}m ${timeLeft % 60}s</p>` : ''}
+        `;
+        challengesList.appendChild(div);
+    }
+    
+    // Show available challenges
+    for (const key of gameState.challenges.available) {
+        const challenge = challenges[key];
+        const div = document.createElement('div');
+        div.className = 'challenge-item';
+        div.innerHTML = `
+            <div class="challenge-header">
+                <span class="challenge-title">${challenge.name}</span>
+                <span class="challenge-reward">🏆 Reward: ${Object.entries(challenge.reward).map(([r, a]) => `${a} ${r}`).join(', ')}</span>
+            </div>
+            <p class="challenge-description">${challenge.description}</p>
+            <p style="color: #a8dadc; font-size: 0.9em;">Difficulty: <span style="color: ${challenge.difficulty === 'easy' ? '#4caf50' : challenge.difficulty === 'medium' ? '#ffd700' : challenge.difficulty === 'hard' ? '#ff6b6b' : '#9c27b0'}">${challenge.difficulty.toUpperCase()}</span></p>
+            <button onclick="startChallenge('${key}')" ${gameState.challenges.active ? 'disabled' : ''} class="control-btn" style="margin-top: 10px;">Start Challenge</button>
+        `;
+        challengesList.appendChild(div);
+    }
+    
+    // Show completed challenges
+    for (const key of gameState.challenges.completed) {
+        const challenge = challenges[key];
+        const div = document.createElement('div');
+        div.className = 'challenge-item completed';
+        div.innerHTML = `
+            <div class="challenge-header">
+                <span class="challenge-title">✅ ${challenge.name}</span>
+            </div>
+            <p class="challenge-description">${challenge.description}</p>
+            <p style="color: #4caf50;">COMPLETED</p>
+        `;
+        challengesList.appendChild(div);
+    }
+}
+
+// Story Mode Functions
+function updateStoryDisplay() {
+    const storyContent = document.getElementById('story-content');
+    if (!storyContent) return;
+    
+    const currentChapter = storyChapters[gameState.story.currentChapter];
+    if (!currentChapter) {
+        storyContent.innerHTML = '<p style="color: #a8dadc;">Your story has just begun. Continue building your empire...</p>';
+        return;
+    }
+    
+    // Check if chapter is unlocked
+    if (currentChapter.requires) {
+        const meetsRequirements = checkStoryRequirements(currentChapter.requires);
+        if (!meetsRequirements) {
+            storyContent.innerHTML = `
+                <div class="story-panel">
+                    <h3 style="color: #9c27b0;">${currentChapter.title} (Locked)</h3>
+                    <p style="color: #a8dadc;">Requirements not met. Continue your journey...</p>
+                </div>
+            `;
+            return;
+        }
+    }
+    
+    const currentScene = currentChapter.scenes[gameState.story.currentScene];
+    if (!currentScene) return;
+    
+    storyContent.innerHTML = `
+        <div class="story-panel">
+            <h3 style="color: #9c27b0;">${currentChapter.title}</h3>
+            <p class="story-text">${currentScene.text}</p>
+            <div class="story-choices">
+                ${currentScene.choices.map((choice, index) => `
+                    <div class="story-choice" onclick="makeStoryChoice(${index})">
+                        ${choice.text}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function checkStoryRequirements(requires) {
+    if (requires.enemiesDefeated && gameState.enemiesDefeated < requires.enemiesDefeated) return false;
+    if (requires.research && !gameState.research[requires.research]) return false;
+    return true;
+}
+
+function makeStoryChoice(choiceIndex) {
+    const currentChapter = storyChapters[gameState.story.currentChapter];
+    const currentScene = currentChapter.scenes[gameState.story.currentScene];
+    const choice = currentScene.choices[choiceIndex];
+    
+    // Apply effects
+    if (choice.effect) {
+        for (const [resource, amount] of Object.entries(choice.effect)) {
+            if (gameState.resources[resource] !== undefined) {
+                gameState.resources[resource] += amount;
+            } else if (resource === 'ships') {
+                for (const [ship, count] of Object.entries(amount)) {
+                    gameState.ships[ship] += count;
+                }
+            }
+        }
+    }
+    
+    // Record choice
+    gameState.story.choicesMade.push({
+        chapter: gameState.story.currentChapter,
+        scene: gameState.story.currentScene,
+        choice: choiceIndex
+    });
+    
+    // Move to next scene
+    if (choice.nextScene === -1) {
+        // Chapter complete
+        if (choice.unlockChapter !== undefined) {
+            if (!gameState.story.unlockedChapters.includes(choice.unlockChapter)) {
+                gameState.story.unlockedChapters.push(choice.unlockChapter);
+                gameState.story.currentChapter = choice.unlockChapter;
+                gameState.story.currentScene = 0;
+                showNotification(`New chapter unlocked: ${storyChapters[choice.unlockChapter].title}`, 'discovery');
+            }
+        }
+    } else {
+        gameState.story.currentScene = choice.nextScene;
+    }
+    
+    updateStoryDisplay();
+    updateUI();
+}
+
+// Seasonal Events Functions
+function checkSeasonalEvent() {
+    const now = Date.now();
+    
+    // Check if an event should spawn (every 10-20 minutes)
+    if (!gameState.seasonalEvents.nextEventTime) {
+        gameState.seasonalEvents.nextEventTime = now + (600000 + Math.random() * 600000); // 10-20 min
+        return;
+    }
+    
+    // Check if active event expired
+    if (gameState.seasonalEvents.active) {
+        const event = seasonalEvents[gameState.seasonalEvents.active.key];
+        const elapsed = (now - gameState.seasonalEvents.active.startTime) / 1000;
+        
+        if (elapsed >= event.duration) {
+            showNotification(`Event ended: ${event.name}`, 'info');
+            gameState.seasonalEvents.active = null;
+        }
+        return;
+    }
+    
+    // Spawn new event
+    if (now >= gameState.seasonalEvents.nextEventTime) {
+        const eventKeys = Object.keys(seasonalEvents);
+        const weights = eventKeys.map(key => {
+            const rarity = seasonalEvents[key].rarity;
+            if (rarity === 'common') return 50;
+            if (rarity === 'uncommon') return 30;
+            if (rarity === 'rare') return 10;
+            return 5;
+        });
+        
+        // Weighted random selection
+        const totalWeight = weights.reduce((a, b) => a + b, 0);
+        let random = Math.random() * totalWeight;
+        let selectedIndex = 0;
+        
+        for (let i = 0; i < weights.length; i++) {
+            random -= weights[i];
+            if (random <= 0) {
+                selectedIndex = i;
+                break;
+            }
+        }
+        
+        const eventKey = eventKeys[selectedIndex];
+        const event = seasonalEvents[eventKey];
+        
+        // Apply instant effects
+        if (event.effect.darkMatter) {
+            gameState.prestige.darkMatter += event.effect.darkMatter;
+        }
+        
+        // Start timed event
+        if (event.duration > 0) {
+            gameState.seasonalEvents.active = {
+                key: eventKey,
+                startTime: now
+            };
+        }
+        
+        showNotification(`🎉 SEASONAL EVENT: ${event.name}! ${event.description}`, 'achievement');
+        gameState.seasonalEvents.nextEventTime = now + (600000 + Math.random() * 600000);
+    }
+}
+
+function applySeasonalBonuses(production) {
+    if (!gameState.seasonalEvents.active) return production;
+    
+    const event = seasonalEvents[gameState.seasonalEvents.active.key];
+    const effect = event.effect;
+    
+    if (effect.metalBonus) production.metal *= (1 + effect.metalBonus);
+    if (effect.energyBonus) production.energy *= (1 + effect.energyBonus);
+    if (effect.researchBonus) production.research *= (1 + effect.researchBonus);
+    if (effect.allBonus) {
+        production.metal *= (1 + effect.allBonus);
+        production.energy *= (1 + effect.allBonus);
+        production.research *= (1 + effect.allBonus);
+        production.credits *= (1 + effect.allBonus);
+    }
+    
+    return production;
+}
+
+// Galaxy Generation Functions
+function generateGalaxy(size = 'medium') {
+    const template = galaxyTemplates[size];
+    if (!template) return;
+    
+    gameState.galaxy.size = size;
+    gameState.galaxy.generated = true;
+    
+    // Generate procedural sectors based on seed
+    for (let i = 0; i < template.sectors; i++) {
+        const sectorSeed = gameState.galaxy.seed + i;
+        const random = seededRandom(sectorSeed);
+        
+        // Determine sector type using weighted random
+        const typeRoll = random();
+        let selectedType;
+        if (typeRoll < 0.3) selectedType = sectorTypes[0]; // Asteroid Field
+        else if (typeRoll < 0.6) selectedType = sectorTypes[1]; // Nebula
+        else if (typeRoll < 0.85) selectedType = sectorTypes[2]; // Ancient Ruins
+        else selectedType = sectorTypes[3]; // Trade Hub
+        
+        const sectorId = `sector_${i}`;
+        gameState.exploration.sectors[sectorId] = {
+            name: `${selectedType.name} Sector-${i}`,
+            type: selectedType.name,
+            bonus: selectedType.bonus,
+            multiplier: selectedType.multiplier * template.resourceMultiplier,
+            controlled: false,
+            discovered: false,
+            enemyChance: random() * template.enemyDensity
+        };
+    }
+    
+    showNotification(`Galaxy generated! ${template.sectors} sectors await discovery.`, 'discovery');
+}
+
+// Simple seeded random number generator
+function seededRandom(seed) {
+    let state = seed;
+    return function() {
+        state = (state * 9301 + 49297) % 233280;
+        return state / 233280;
+    };
+}
+
+function displaySeasonalEvent() {
+    // Could add a UI element to show active seasonal events
+    if (!gameState.seasonalEvents.active) return null;
+    
+    const event = seasonalEvents[gameState.seasonalEvents.active.key];
+    const elapsed = Math.floor((Date.now() - gameState.seasonalEvents.active.startTime) / 1000);
+    const remaining = Math.max(0, event.duration - elapsed);
+    
+    return {
+        name: event.name,
+        description: event.description,
+        timeRemaining: remaining
+    };
+}
+
 // Apply special building effects
 function applyBuildingEffects(deltaTime) {
     // Refinery: Auto-convert resources
     if (gameState.buildings.refinery > 0) {
         const refinery = buildings.refinery;
         const convertAmount = refinery.refinesPerSecond * gameState.buildings.refinery * deltaTime;
-        if (gameState.resources.metal >= convertAmount * 2) {
-            gameState.resources.metal -= convertAmount * 2;
+        if (gameState.resources.metal >= convertAmount * gameConfig.metalToEnergyRatio) {
+            gameState.resources.metal -= convertAmount * gameConfig.metalToEnergyRatio;
             gameState.resources.energy += convertAmount;
         }
     }
@@ -2060,6 +2948,18 @@ function gameLoop() {
     if (gameSettings.autoCombatEnabled) {
         autoEngageCombat();
     }
+    
+    // Record production statistics
+    recordProductionSnapshot();
+    
+    // Update play time
+    gameState.statistics.totalPlayTime += (now - gameState.lastUpdate);
+    
+    // Check challenge progress
+    checkChallengeProgress();
+    
+    // Check for seasonal events
+    checkSeasonalEvent();
     
     updateUI();
 }
@@ -2420,6 +3320,25 @@ function updateSettingsUI() {
     document.getElementById('setting-autocombat').checked = gameSettings.autoCombatEnabled;
     document.getElementById('setting-offline-progress').checked = gameSettings.offlineProgressEnabled;
     
+    // Theme selector
+    const themeSelector = document.getElementById('setting-theme');
+    if (themeSelector) {
+        themeSelector.value = gameSettings.theme || 'dark';
+    }
+    
+    // Audio settings
+    const soundEffects = document.getElementById('setting-sound-effects');
+    const music = document.getElementById('setting-music');
+    const volume = document.getElementById('setting-volume');
+    const volumeDisplay = document.getElementById('volume-display');
+    
+    if (soundEffects) soundEffects.checked = gameSettings.soundEffectsEnabled || false;
+    if (music) music.checked = gameSettings.musicEnabled || false;
+    if (volume) {
+        volume.value = gameSettings.masterVolume || 50;
+        if (volumeDisplay) volumeDisplay.textContent = `${gameSettings.masterVolume || 50}%`;
+    }
+    
     updateSpeedDisplay();
 }
 
@@ -2427,9 +3346,20 @@ function updateSettingsUI() {
 function applySetting(settingName, value) {
     // Validate settingName to prevent unintended property modification
     const allowedSettings = [
-        'autoSaveEnabled', 'autoSaveInterval', 'gameSpeed', 'showResourceRates',
-        'showNotifications', 'confirmReset', 'confirmBulkActions', 
-        'autoCombatEnabled', 'offlineProgressEnabled'
+        'autoSaveEnabled',
+        'autoSaveInterval',
+        'gameSpeed',
+        'showResourceRates',
+        'showNotifications',
+        'confirmReset',
+        'confirmBulkActions',
+        'autoCombatEnabled',
+        'offlineProgressEnabled',
+        'theme',
+        'soundEffectsEnabled',
+        'musicEnabled',
+        'masterVolume',
+        'showTooltips'
     ];
     
     if (!allowedSettings.includes(settingName)) {
@@ -2453,6 +3383,14 @@ function applySetting(settingName, value) {
     
     if (settingName === 'showResourceRates') {
         updateUI();
+    }
+    
+    // Update volume display
+    if (settingName === 'masterVolume') {
+        const volumeDisplay = document.getElementById('volume-display');
+        if (volumeDisplay) {
+            volumeDisplay.textContent = `${value}%`;
+        }
     }
 }
 
@@ -2513,6 +3451,11 @@ function init() {
     // Load settings first
     loadSettings();
     
+    // Apply saved theme
+    if (gameSettings.theme && gameSettings.theme !== 'dark') {
+        document.body.classList.add(`theme-${gameSettings.theme}`);
+    }
+    
     // Try to load saved game
     const saved = localStorage.getItem('galaxyBuilderSave');
     if (saved) {
@@ -2523,6 +3466,12 @@ function init() {
         applyOfflineProgress();
     } else {
         gameState.lastUpdate = Date.now();
+        gameState.statistics.sessionStartTime = Date.now();
+    }
+    
+    // Initialize challenges if not already set
+    if (!gameState.challenges.available || gameState.challenges.available.length === 0) {
+        initializeChallenges();
     }
     
     // Set up event listeners

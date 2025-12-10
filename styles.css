@@ -776,3 +776,522 @@ footer {
     background: rgba(156, 39, 176, 0.95);
     color: white;
 }
+
+/* Tooltips */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 250px;
+    background-color: rgba(0, 0, 0, 0.95);
+    color: #00d9ff;
+    text-align: left;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 2000;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -125px;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+    border: 1px solid #00d9ff;
+    font-size: 0.9em;
+    line-height: 1.4;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #00d9ff transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+.tooltip-title {
+    color: #00d9ff;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.tooltip-description {
+    color: #a8dadc;
+    margin-bottom: 5px;
+}
+
+.tooltip-stats {
+    color: #ffd700;
+    font-size: 0.85em;
+}
+
+/* Theme Switching */
+body.theme-light {
+    background: linear-gradient(135deg, #e0e7ff 0%, #cfe2ff 50%, #b6d7ff 100%);
+    color: #1a1a2e;
+}
+
+body.theme-light .panel {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: #0088cc;
+}
+
+body.theme-light .panel h2 {
+    color: #0088cc;
+    border-bottom-color: rgba(0, 136, 204, 0.3);
+}
+
+body.theme-light .resource-name,
+body.theme-light h3,
+body.theme-light h4 {
+    color: #0088cc;
+}
+
+body.theme-light p,
+body.theme-light .resource,
+body.theme-light .building-item,
+body.theme-light .research-item,
+body.theme-light .ship-item {
+    color: #1a1a2e;
+    background: rgba(255, 255, 255, 0.5);
+    border-color: rgba(0, 136, 204, 0.3);
+}
+
+body.theme-classic {
+    background: linear-gradient(135deg, #2c003e 0%, #1a0033 50%, #0d001a 100%);
+}
+
+body.theme-classic .panel {
+    background: rgba(138, 43, 226, 0.2);
+    border-color: #9370db;
+}
+
+body.theme-classic .panel h2,
+body.theme-classic .resource-name {
+    color: #9370db;
+}
+
+body.theme-green {
+    background: linear-gradient(135deg, #0a3d0a 0%, #052805 50%, #001400 100%);
+}
+
+body.theme-green .panel {
+    background: rgba(34, 139, 34, 0.2);
+    border-color: #32cd32;
+}
+
+body.theme-green .panel h2,
+body.theme-green .resource-name {
+    color: #32cd32;
+}
+
+/* Statistics Dashboard */
+.stats-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 217, 255, 0.3);
+}
+
+.stat-card h4 {
+    color: #00d9ff;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 1.8em;
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.stat-label {
+    color: #a8dadc;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+.chart-container {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 217, 255, 0.3);
+    margin-top: 15px;
+}
+
+.simple-chart {
+    display: flex;
+    align-items: flex-end;
+    height: 150px;
+    gap: 5px;
+    padding: 10px;
+}
+
+.chart-bar {
+    flex: 1;
+    background: linear-gradient(to top, #00d9ff, #0088cc);
+    border-radius: 3px 3px 0 0;
+    position: relative;
+    min-height: 5px;
+    transition: all 0.3s;
+}
+
+.chart-bar:hover {
+    background: linear-gradient(to top, #00eaff, #00a8ff);
+    transform: translateY(-3px);
+}
+
+.chart-label {
+    text-align: center;
+    color: #a8dadc;
+    font-size: 0.75em;
+    margin-top: 5px;
+}
+
+/* Challenges */
+.challenge-item {
+    background: rgba(156, 39, 176, 0.2);
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px solid #9c27b0;
+    margin-bottom: 10px;
+}
+
+.challenge-item.active {
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+.challenge-item.completed {
+    opacity: 0.7;
+    border-color: #4caf50;
+}
+
+.challenge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.challenge-title {
+    color: #9c27b0;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+.challenge-reward {
+    color: #ffd700;
+    font-size: 0.9em;
+}
+
+.challenge-description {
+    color: #a8dadc;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+
+.challenge-progress {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    height: 20px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.challenge-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #9c27b0, #ffd700);
+    transition: width 0.3s;
+}
+
+.challenge-timer {
+    color: #ff6b6b;
+    font-size: 0.9em;
+}
+
+/* Story Mode */
+.story-panel {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #9c27b0;
+    margin-bottom: 20px;
+}
+
+.story-text {
+    color: #a8dadc;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    font-size: 1.05em;
+}
+
+.story-choice {
+    background: rgba(156, 39, 176, 0.2);
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 5px;
+    border: 1px solid #9c27b0;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.story-choice:hover {
+    background: rgba(156, 39, 176, 0.4);
+    border-color: #ffd700;
+    transform: translateX(5px);
+}
+
+/* Enemy Types */
+.enemy-type-normal {
+    border-color: rgba(255, 107, 107, 0.5);
+}
+
+.enemy-type-elite {
+    border-color: rgba(255, 193, 7, 0.8);
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.enemy-type-boss {
+    border-color: rgba(156, 39, 176, 0.8);
+    background: rgba(156, 39, 176, 0.1);
+}
+
+.enemy-ability {
+    display: inline-block;
+    padding: 3px 8px;
+    margin: 2px;
+    background: rgba(0, 217, 255, 0.2);
+    border-radius: 3px;
+    font-size: 0.8em;
+    color: #00d9ff;
+}
+
+/* Sound Control */
+.sound-control {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #00d9ff;
+    z-index: 1000;
+}
+
+.sound-btn {
+    background: none;
+    border: none;
+    color: #00d9ff;
+    font-size: 1.5em;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.sound-btn:hover {
+    transform: scale(1.2);
+    color: #00eaff;
+}
+
+.volume-slider {
+    width: 100px;
+    margin-left: 10px;
+}
+
+/* Prestige Styling */
+.prestige-content {
+    display: grid;
+    gap: 20px;
+}
+
+.prestige-info {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.prestige-btn {
+    background: linear-gradient(135deg, #ffd700 0%, #ff8800 100%);
+    color: #1a1a2e;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-top: 10px;
+    transition: all 0.3s;
+}
+
+.prestige-btn:hover {
+    background: linear-gradient(135deg, #ffea00 0%, #ffaa00 100%);
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.prestige-upgrades,
+.prestige-milestones {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.prestige-upgrade-item,
+.prestige-milestone-item {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.prestige-milestone-item.achieved {
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+/* Exploration Styling */
+.exploration-content {
+    display: grid;
+    gap: 20px;
+}
+
+.exploration-info {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.explore-btn,
+.expedition-btn,
+.colony-btn {
+    background: linear-gradient(135deg, #9c27b0 0%, #6a1b9a 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    margin: 5px;
+    transition: all 0.3s;
+}
+
+.explore-btn:hover,
+.expedition-btn:hover,
+.colony-btn:hover {
+    background: linear-gradient(135deg, #ba68c8 0%, #9c27b0 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(156, 39, 176, 0.4);
+}
+
+.sectors-list,
+.expeditions-list {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.sector-item {
+    background: rgba(156, 39, 176, 0.2);
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    border: 1px solid #9c27b0;
+}
+
+.expedition-item {
+    background: rgba(0, 217, 255, 0.1);
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    border: 1px solid #00d9ff;
+}
+
+/* Tech Categories */
+.tech-military {
+    border-color: #ff6b6b;
+}
+
+.tech-economy {
+    border-color: #ffd700;
+}
+
+.tech-science {
+    border-color: #00d9ff;
+}
+
+.tech-megaproject {
+    border-color: #9c27b0;
+    background: rgba(156, 39, 176, 0.1);
+}
+
+.tech-category {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+/* Boss Enemies */
+.boss-enemy {
+    border: 2px solid #9c27b0;
+    background: rgba(156, 39, 176, 0.2);
+    box-shadow: 0 0 15px rgba(156, 39, 176, 0.3);
+}
+
+.boss-enemy h3 {
+    color: #ba68c8;
+}
+
+.enemy-description {
+    color: #9c27b0;
+    font-style: italic;
+    margin-bottom: 8px;
+}
+
+/* Wave Controls */
+.wave-controls {
+    background: rgba(255, 107, 107, 0.2);
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px solid #ff6b6b;
+    margin-bottom: 15px;
+}
+
+.wave-toggle-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #cc0000 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 10px;
+    transition: all 0.3s;
+}
+
+.wave-toggle-btn:hover {
+    background: linear-gradient(135deg, #ff8888 0%, #ff0000 100%);
+    transform: translateY(-2px);
+}
