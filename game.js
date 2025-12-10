@@ -43,7 +43,8 @@ const gameSettings = {
     soundEffectsEnabled: false,
     musicEnabled: false,
     masterVolume: 50,
-    showTooltips: true
+    showTooltips: true,
+    currentTab: 'core' // Remember which tab is active
 };
 
 // Game State
@@ -3516,7 +3517,8 @@ function applySetting(settingName, value) {
         'soundEffectsEnabled',
         'musicEnabled',
         'masterVolume',
-        'showTooltips'
+        'showTooltips',
+        'currentTab'
     ];
     
     if (!allowedSettings.includes(settingName)) {
@@ -3589,18 +3591,76 @@ function handleKeyboardShortcut(event) {
             setGameSpeed(gameSettings.gameSpeed === 0 ? 1 : 0);
             break;
         case '1':
-            setGameSpeed(0.5);
+            if (!event.ctrlKey && !event.altKey) {
+                setGameSpeed(0.5);
+            }
             break;
         case '2':
-            setGameSpeed(1);
+            if (!event.ctrlKey && !event.altKey) {
+                setGameSpeed(1);
+            }
             break;
         case '3':
-            setGameSpeed(2);
+            if (!event.ctrlKey && !event.altKey) {
+                setGameSpeed(2);
+            }
             break;
         case 'o':
             toggleSettings();
             break;
+        // Tab navigation shortcuts
+        case 'q':
+            switchTab('core');
+            break;
+        case 'w':
+            switchTab('military');
+            break;
+        case 'e':
+            switchTab('exploration');
+            break;
+        case 'r':
+            switchTab('economy');
+            break;
+        case 't':
+            switchTab('advanced');
+            break;
+        case 'y':
+            switchTab('info');
+            break;
     }
+}
+
+// Tab switching functionality
+function switchTab(tabName) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Remove active class from all tab buttons
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    tabButtons.forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show the selected tab content
+    const selectedTab = document.getElementById(`tab-${tabName}`);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
+    
+    // Add active class to the clicked button
+    const activeButton = Array.from(tabButtons).find(btn => 
+        btn.textContent.toLowerCase().includes(tabName)
+    );
+    if (activeButton) {
+        activeButton.classList.add('active');
+    }
+    
+    // Save the current tab
+    gameSettings.currentTab = tabName;
+    saveSettings();
 }
 
 // Initialize game
@@ -3639,6 +3699,11 @@ function init() {
     // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboardShortcut);
     
+    // Restore the last active tab
+    if (gameSettings.currentTab) {
+        switchTab(gameSettings.currentTab);
+    }
+    
     // Initial UI update
     updateUI();
     
@@ -3652,6 +3717,7 @@ function init() {
     
     addCombatLog('Welcome to Galaxy Builder! Start by building Metal Mines and Solar Panels.', 'victory');
     addCombatLog('Press [P] to pause, [1/2/3] for speed, [O] for options, [Ctrl+S] to save', 'victory');
+    addCombatLog('Use [Q/W/E/R/T/Y] to switch between tabs', 'victory');
 }
 
 // Start game when page loads
