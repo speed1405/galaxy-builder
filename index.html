@@ -143,11 +143,11 @@
                         <p>Unlocked: <span id="achievements-unlocked">0</span> / <span id="achievements-total">0</span></p>
                     </div>
                     <div class="achievement-categories">
-                        <button onclick="filterAchievements('all')" class="category-btn active">All</button>
-                        <button onclick="filterAchievements('combat')" class="category-btn">Combat</button>
-                        <button onclick="filterAchievements('economy')" class="category-btn">Economy</button>
-                        <button onclick="filterAchievements('research')" class="category-btn">Research</button>
-                        <button onclick="filterAchievements('exploration')" class="category-btn">Exploration</button>
+                        <button onclick="filterAchievements('all', event)" class="category-btn active">All</button>
+                        <button onclick="filterAchievements('combat', event)" class="category-btn">Combat</button>
+                        <button onclick="filterAchievements('economy', event)" class="category-btn">Economy</button>
+                        <button onclick="filterAchievements('research', event)" class="category-btn">Research</button>
+                        <button onclick="filterAchievements('exploration', event)" class="category-btn">Exploration</button>
                     </div>
                     <div id="achievements-display" class="achievements-grid"></div>
                 </div>

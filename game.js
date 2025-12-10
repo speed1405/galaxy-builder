@@ -1717,10 +1717,12 @@ function updateAchievementsDisplay() {
     document.getElementById('achievements-total').textContent = Object.keys(achievements).length;
 }
 
-function filterAchievements(category) {
+function filterAchievements(category, event) {
     const buttons = document.querySelectorAll('.category-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
     
     const items = document.querySelectorAll('.achievement-item');
     items.forEach(item => {
@@ -1737,20 +1739,20 @@ function convertResource(conversionKey, amount) {
     const conversion = resourceConversions[conversionKey];
     if (!conversion) return;
     
-    const fromAmount = amount;
-    const toAmount = Math.floor(fromAmount / conversion.rate * (1 / conversion.ratio));
+    const conversionRatio = 1 / conversion.ratio;
+    const toAmount = Math.floor(amount / conversion.rate * conversionRatio);
     
     // Check if player has enough
-    if (gameState.resources[conversion.from] < fromAmount) {
+    if (gameState.resources[conversion.from] < amount) {
         showNotification(`Not enough ${conversion.from}`, 'error');
         return;
     }
     
     // Perform conversion
-    gameState.resources[conversion.from] -= fromAmount;
+    gameState.resources[conversion.from] -= amount;
     gameState.resources[conversion.to] += toAmount;
     
-    showNotification(`Converted ${fromAmount} ${conversion.from} to ${toAmount} ${conversion.to}`, 'success');
+    showNotification(`Converted ${amount} ${conversion.from} to ${toAmount} ${conversion.to}`, 'success');
 }
 
 function updateConversionDisplay() {
