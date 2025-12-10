@@ -3591,19 +3591,13 @@ function handleKeyboardShortcut(event) {
             setGameSpeed(gameSettings.gameSpeed === 0 ? 1 : 0);
             break;
         case '1':
-            if (!event.ctrlKey && !event.altKey) {
-                setGameSpeed(0.5);
-            }
+            setGameSpeed(0.5);
             break;
         case '2':
-            if (!event.ctrlKey && !event.altKey) {
-                setGameSpeed(1);
-            }
+            setGameSpeed(1);
             break;
         case '3':
-            if (!event.ctrlKey && !event.altKey) {
-                setGameSpeed(2);
-            }
+            setGameSpeed(2);
             break;
         case 'o':
             toggleSettings();
@@ -3648,14 +3642,24 @@ function switchTab(tabName) {
     const selectedTab = document.getElementById(`tab-${tabName}`);
     if (selectedTab) {
         selectedTab.classList.add('active');
+    } else {
+        console.warn(`Invalid tab name: ${tabName}`);
+        return;
     }
     
-    // Add active class to the clicked button
-    const activeButton = Array.from(tabButtons).find(btn => 
-        btn.textContent.toLowerCase().includes(tabName)
-    );
-    if (activeButton) {
-        activeButton.classList.add('active');
+    // Add active class to the clicked button - use data attribute or direct mapping
+    const tabMap = {
+        'core': 0,
+        'military': 1,
+        'exploration': 2,
+        'economy': 3,
+        'advanced': 4,
+        'info': 5
+    };
+    
+    const tabIndex = tabMap[tabName];
+    if (tabIndex !== undefined && tabButtons[tabIndex]) {
+        tabButtons[tabIndex].classList.add('active');
     }
     
     // Save the current tab
