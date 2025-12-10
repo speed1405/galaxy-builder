@@ -7,7 +7,9 @@ const gameConfig = {
     autoSaveInterval: 30000, // Default auto-save interval in ms (30 seconds)
     autoCombatSafetyMargin: 1.2, // Require 20% more power than enemy for auto-combat
     offlineProgressCapHours: 4, // Maximum hours of offline progress
-    minOfflineProgressMs: 60000 // Minimum time away before offline progress applies (1 minute)
+    minOfflineProgressMs: 60000, // Minimum time away before offline progress applies (1 minute)
+    statisticsRecordInterval: 60000, // Record production snapshot every 60 seconds
+    metalToEnergyRatio: 2 // Refinery: 2 metal -> 1 energy
 };
 
 // Speed display names
@@ -2305,7 +2307,7 @@ function changeTheme(themeName) {
 // Statistics Functions
 function recordProductionSnapshot() {
     const now = Date.now();
-    if (now - gameState.statistics.lastRecordTime < 60000) return; // Record every minute
+    if (now - gameState.statistics.lastRecordTime < gameConfig.statisticsRecordInterval) return; // Record every minute
     
     const production = calculateProduction();
     const snapshot = {
@@ -2779,32 +2781,31 @@ function generateGalaxy(size = 'medium') {
     gameState.galaxy.generated = true;
     
     // Generate procedural sectors based on seed
-    const sectors = [];
     for (let i = 0; i < template.sectors; i++) {
         const sectorSeed = gameState.galaxy.seed + i;
         const random = seededRandom(sectorSeed);
         
-        // Determine sector type
+        // Determine sector type using weighted random
         const typeRoll = random();
-        let type;
-        if (typeRoll < 0.3) type = sectorTypes[0]; // Asteroid Field
-        else if (typeRoll < 0.6) type = sectorTypes[1]; // Nebula
-        else if (typeRoll < 0.85) type = sectorTypes[2]; // Ancient Ruins
-        else type = sectorTypes[3]; // Trade Hub
+        let selectedType;
+        if (typeRoll < 0.3) selectedType = sectorTypes[0]; // Asteroid Field
+        else if (typeRoll < 0.6) selectedType = sectorTypes[1]; // Nebula
+        else if (typeRoll < 0.85) selectedType = sectorTypes[2]; // Ancient Ruins
+        else selectedType = sectorTypes[3]; // Trade Hub
         
-        sectors.push({
-            id: i,
-            name: `${type.name} Sector-${i}`,
-            type: type.name,
-            bonus: type.bonus,
-            multiplier: type.multiplier * template.resourceMultiplier,
-            enemyChance: random() * template.enemyDensity,
-            discovered: false
-        });
+        const sectorId = `sector_${i}`;
+        gameState.exploration.sectors[sectorId] = {
+            name: `${selectedType.name} Sector-${i}`,
+            type: selectedType.name,
+            bonus: selectedType.bonus,
+            multiplier: selectedType.multiplier * template.resourceMultiplier,
+            controlled: false,
+            discovered: false,
+            enemyChance: random() * template.enemyDensity
+        };
     }
     
     showNotification(`Galaxy generated! ${template.sectors} sectors await discovery.`, 'discovery');
-    return sectors;
 }
 
 // Simple seeded random number generator
@@ -2837,8 +2838,8 @@ function applyBuildingEffects(deltaTime) {
     if (gameState.buildings.refinery > 0) {
         const refinery = buildings.refinery;
         const convertAmount = refinery.refinesPerSecond * gameState.buildings.refinery * deltaTime;
-        if (gameState.resources.metal >= convertAmount * 2) {
-            gameState.resources.metal -= convertAmount * 2;
+        if (gameState.resources.metal >= convertAmount * gameConfig.metalToEnergyRatio) {
+            gameState.resources.metal -= convertAmount * gameConfig.metalToEnergyRatio;
             gameState.resources.energy += convertAmount;
         }
     }

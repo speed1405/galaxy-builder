@@ -146,14 +146,6 @@ Experience the narrative journey of your galactic empire:
 
 Make choices that affect your empire's development and unlock new chapters as you progress!
 
-### Enhanced Combat System
-- **Auto-Save Control**: Adjustable interval or disable/enable
-- **Game Speed**: Pause, Slow (0.5x), Normal (1x), Fast (2x)
-- **Notification Preferences**: Toggle alerts
-- **Display Options**: Show/hide resource rates and tooltips
-- **Confirmation Dialogs**: Optional confirmations for resets and bulk actions
-- **Offline Progress**: Earn resources while away (max 4 hours)
-
 ## 🚀 How to Play
 
 1. **Start Building**: Begin by constructing Metal Mines and Solar Panels
