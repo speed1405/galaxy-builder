@@ -47,12 +47,19 @@ const gameState = {
         research: 0,
         credits: 100
     },
+    resourceCaps: {
+        metal: 10000,
+        energy: 10000,
+        research: 5000,
+        credits: 20000
+    },
     buildings: {
         metalMine: 0,
         solarPanel: 0,
         researchLab: 0,
         shipyard: 0,
-        tradingPost: 0
+        tradingPost: 0,
+        warehouse: 0
     },
     research: {
         basicEngineering: false,
@@ -64,7 +71,22 @@ const gameState = {
         warpDrive: false,
         advancedWeaponry: false,
         nanoTechnology: false,
-        quantumPhysics: false
+        quantumPhysics: false,
+        // Military Specialization
+        plasmaCannonsII: false,
+        plasmaCannonsIII: false,
+        tacticalSystems: false,
+        // Economy Specialization
+        advancedMining: false,
+        fusionPower: false,
+        galacticTrade: false,
+        // Science Specialization
+        researchNetwork: false,
+        quantumComputing: false,
+        // Mega-Projects
+        dysonSphere: false,
+        galaxyNetwork: false,
+        universalConstructor: false
     },
     ships: {
         scout: 0,
@@ -75,6 +97,36 @@ const gameState = {
         battleship: 0
     },
     enemiesDefeated: 0,
+    prestige: {
+        darkMatter: 0,
+        totalResets: 0,
+        upgrades: {
+            productionBoost: 0, // +10% production per level
+            costReduction: 0, // -5% costs per level
+            researchSpeed: 0, // +15% research per level
+            combatPower: 0, // +20% fleet power per level
+            startingBonus: 0 // Start with more resources per level
+        },
+        milestones: {
+            enemies100: false,
+            enemies500: false,
+            enemies1000: false,
+            resources1M: false,
+            resources10M: false,
+            allTech: false
+        }
+    },
+    combat: {
+        nextWaveTime: 0,
+        waveNumber: 0,
+        waveEnabled: false
+    },
+    exploration: {
+        sectorsExplored: 0,
+        sectors: {},
+        nextExplorationTime: 0,
+        expeditions: []
+    },
     lastUpdate: Date.now()
 };
 
@@ -117,6 +169,14 @@ const buildings = {
         produces: { credits: 2 },
         costMultiplier: 1.25,
         requires: 'advancedMaterials'
+    },
+    warehouse: {
+        name: 'Warehouse',
+        description: 'Increases storage capacity for all resources',
+        baseCost: { metal: 100, credits: 200 },
+        produces: {},
+        costMultiplier: 1.5,
+        capBonus: 5000 // Increases all caps by 5000
     }
 };
 
@@ -180,6 +240,87 @@ const research = {
         description: 'Ultimate technology - all bonuses doubled',
         cost: { research: 500 },
         requires: 'warpDrive'
+    },
+    // Military Specialization
+    plasmaCannonsII: {
+        name: 'Plasma Cannons II',
+        description: 'Advanced plasma technology (+40% attack)',
+        cost: { research: 200 },
+        requires: 'plasmaCannons',
+        category: 'military'
+    },
+    plasmaCannonsIII: {
+        name: 'Plasma Cannons III',
+        description: 'Ultimate plasma weapons (+60% attack)',
+        cost: { research: 400 },
+        requires: 'plasmaCannonsII',
+        category: 'military'
+    },
+    tacticalSystems: {
+        name: 'Tactical Systems',
+        description: 'Advanced combat formations (+25% fleet power)',
+        cost: { research: 250 },
+        requires: 'advancedWeaponry',
+        category: 'military'
+    },
+    // Economy Specialization
+    advancedMining: {
+        name: 'Advanced Mining',
+        description: 'Improve metal production by 50%',
+        cost: { research: 180 },
+        requires: 'advancedMaterials',
+        category: 'economy'
+    },
+    fusionPower: {
+        name: 'Fusion Power',
+        description: 'Improve energy production by 75%',
+        cost: { research: 220 },
+        requires: 'energyEfficiency',
+        category: 'economy'
+    },
+    galacticTrade: {
+        name: 'Galactic Trade',
+        description: 'Improve credit production by 100%',
+        cost: { research: 300 },
+        requires: 'warpDrive',
+        category: 'economy'
+    },
+    // Science Specialization
+    researchNetwork: {
+        name: 'Research Network',
+        description: 'Link labs for +50% research',
+        cost: { research: 150 },
+        requires: 'basicEngineering',
+        category: 'science'
+    },
+    quantumComputing: {
+        name: 'Quantum Computing',
+        description: 'Process data faster (+75% research)',
+        cost: { research: 350 },
+        requires: 'quantumPhysics',
+        category: 'science'
+    },
+    // Mega-Projects
+    dysonSphere: {
+        name: 'Dyson Sphere',
+        description: 'Harness star energy (massive energy boost)',
+        cost: { research: 1000, metal: 10000, energy: 5000, credits: 10000 },
+        requires: 'fusionPower',
+        category: 'megaproject'
+    },
+    galaxyNetwork: {
+        name: 'Galaxy Network',
+        description: 'Interconnect all systems (all production +200%)',
+        cost: { research: 2000, metal: 20000, energy: 15000, credits: 25000 },
+        requires: 'galacticTrade',
+        category: 'megaproject'
+    },
+    universalConstructor: {
+        name: 'Universal Constructor',
+        description: 'Self-replicating factories (all costs -50%)',
+        cost: { research: 1500, metal: 15000, energy: 10000, credits: 20000 },
+        requires: 'nanoTechnology',
+        category: 'megaproject'
     }
 };
 
@@ -231,14 +372,69 @@ const ships = {
 
 // Enemy Definitions
 const enemies = [
-    { name: 'Space Pirates', power: 20, reward: { metal: 50, energy: 30, credits: 100 } },
-    { name: 'Rogue Drones', power: 50, reward: { metal: 100, energy: 80, credits: 200 } },
-    { name: 'Rebel Fleet', power: 150, reward: { metal: 250, energy: 200, credits: 500 } },
-    { name: 'Alien Raiders', power: 300, reward: { metal: 500, energy: 400, credits: 1000 } },
-    { name: 'Dark Empire Scout', power: 600, reward: { metal: 1000, energy: 800, credits: 2000 } },
-    { name: 'Void Leviathan', power: 1200, reward: { metal: 2500, energy: 2000, credits: 5000 } },
-    { name: 'Ancient Guardian', power: 2500, reward: { metal: 5000, energy: 4000, credits: 10000 } }
+    { name: 'Space Pirates', power: 20, reward: { metal: 50, energy: 30, credits: 100 }, type: 'normal' },
+    { name: 'Rogue Drones', power: 50, reward: { metal: 100, energy: 80, credits: 200 }, type: 'normal' },
+    { name: 'Rebel Fleet', power: 150, reward: { metal: 250, energy: 200, credits: 500 }, type: 'normal' },
+    { name: 'Alien Raiders', power: 300, reward: { metal: 500, energy: 400, credits: 1000 }, type: 'normal' },
+    { name: 'Dark Empire Scout', power: 600, reward: { metal: 1000, energy: 800, credits: 2000 }, type: 'normal' },
+    { name: 'Void Leviathan', power: 1200, reward: { metal: 2500, energy: 2000, credits: 5000 }, type: 'boss', 
+      description: '⚔️ BOSS: Massive creature with regenerative abilities' },
+    { name: 'Ancient Guardian', power: 2500, reward: { metal: 5000, energy: 4000, credits: 10000 }, type: 'boss',
+      description: '⚔️ BOSS: Ancient protector with devastating weapons' },
+    { name: 'Void Titan', power: 5000, reward: { metal: 10000, energy: 8000, credits: 20000, research: 1000 }, type: 'boss',
+      description: '⚔️ BOSS: Colossal entity from the void between stars' },
+    { name: 'Cosmic Devourer', power: 10000, reward: { metal: 25000, energy: 20000, credits: 50000, research: 2500 }, type: 'boss',
+      description: '⚔️ BOSS: Ultimate threat consuming entire star systems' }
 ];
+
+// Prestige Upgrade Definitions
+const prestigeUpgrades = {
+    productionBoost: {
+        name: 'Production Boost',
+        description: 'Increase all production by 10% per level',
+        baseCost: 5,
+        costMultiplier: 2,
+        maxLevel: 10
+    },
+    costReduction: {
+        name: 'Cost Reduction',
+        description: 'Reduce all costs by 5% per level',
+        baseCost: 10,
+        costMultiplier: 2.5,
+        maxLevel: 10
+    },
+    researchSpeed: {
+        name: 'Research Speed',
+        description: 'Increase research production by 15% per level',
+        baseCost: 8,
+        costMultiplier: 2.2,
+        maxLevel: 10
+    },
+    combatPower: {
+        name: 'Combat Power',
+        description: 'Increase fleet power by 20% per level',
+        baseCost: 15,
+        costMultiplier: 2.5,
+        maxLevel: 10
+    },
+    startingBonus: {
+        name: 'Starting Bonus',
+        description: 'Start new runs with bonus resources',
+        baseCost: 20,
+        costMultiplier: 3,
+        maxLevel: 5
+    }
+};
+
+// Prestige Milestone Definitions
+const prestigeMilestones = {
+    enemies100: { name: 'Defeat 100 Enemies', requirement: 100, bonus: 2, description: '+2 Dark Matter on prestige' },
+    enemies500: { name: 'Defeat 500 Enemies', requirement: 500, bonus: 5, description: '+5 Dark Matter on prestige' },
+    enemies1000: { name: 'Defeat 1000 Enemies', requirement: 1000, bonus: 10, description: '+10 Dark Matter on prestige' },
+    resources1M: { name: 'Earn 1M Total Resources', requirement: 1000000, bonus: 3, description: '+3 Dark Matter on prestige' },
+    resources10M: { name: 'Earn 10M Total Resources', requirement: 10000000, bonus: 8, description: '+8 Dark Matter on prestige' },
+    allTech: { name: 'Research All Technologies', requirement: 1, bonus: 5, description: '+5 Dark Matter on prestige' }
+};
 
 // Calculate building cost with scaling
 function getBuildingCost(buildingKey) {
@@ -247,7 +443,21 @@ function getBuildingCost(buildingKey) {
     const cost = {};
     
     for (const [resource, amount] of Object.entries(building.baseCost)) {
-        cost[resource] = Math.floor(amount * Math.pow(building.costMultiplier, count));
+        let finalCost = Math.floor(amount * Math.pow(building.costMultiplier, count));
+        
+        // Apply prestige cost reduction
+        const costReductionLevel = gameState.prestige.upgrades.costReduction;
+        if (costReductionLevel > 0) {
+            const reduction = 1 - (costReductionLevel * 0.05);
+            finalCost = Math.floor(finalCost * reduction);
+        }
+        
+        // Apply universal constructor
+        if (gameState.research.universalConstructor) {
+            finalCost = Math.floor(finalCost * 0.5);
+        }
+        
+        cost[resource] = finalCost;
     }
     
     return cost;
@@ -287,6 +497,36 @@ function calculateProduction() {
         }
     }
     
+    // Apply research bonuses
+    if (gameState.research.advancedMining) production.metal *= 1.5;
+    if (gameState.research.fusionPower) production.energy *= 1.75;
+    if (gameState.research.galacticTrade) production.credits *= 2;
+    if (gameState.research.researchNetwork) production.research *= 1.5;
+    if (gameState.research.quantumComputing) production.research *= 1.75;
+    
+    // Apply mega-project bonuses
+    if (gameState.research.dysonSphere) production.energy *= 5;
+    if (gameState.research.galaxyNetwork) {
+        production.metal *= 3;
+        production.energy *= 3;
+        production.research *= 3;
+        production.credits *= 3;
+    }
+    
+    // Apply prestige bonuses
+    const prodBoostLevel = gameState.prestige.upgrades.productionBoost;
+    if (prodBoostLevel > 0) {
+        const multiplier = 1 + (prodBoostLevel * 0.1);
+        for (const resource in production) {
+            production[resource] *= multiplier;
+        }
+    }
+    
+    const researchBoostLevel = gameState.prestige.upgrades.researchSpeed;
+    if (researchBoostLevel > 0) {
+        production.research *= 1 + (researchBoostLevel * 0.15);
+    }
+    
     return production;
 }
 
@@ -302,9 +542,18 @@ function calculateFleetPower() {
     // Apply research bonuses
     if (gameState.research.advancedMaterials) power *= 1.2;
     if (gameState.research.plasmaCannons) power *= 1.3;
+    if (gameState.research.plasmaCannonsII) power *= 1.4;
+    if (gameState.research.plasmaCannonsIII) power *= 1.6;
     if (gameState.research.shieldTech) power *= 1.5;
     if (gameState.research.advancedWeaponry) power *= 1.5;
+    if (gameState.research.tacticalSystems) power *= 1.25;
     if (gameState.research.quantumPhysics) power *= 2;
+    
+    // Apply prestige combat power bonus
+    const combatLevel = gameState.prestige.upgrades.combatPower;
+    if (combatLevel > 0) {
+        power *= 1 + (combatLevel * 0.2);
+    }
     
     return Math.floor(power);
 }
@@ -337,8 +586,23 @@ function researchTech(techKey) {
         return;
     }
     
-    if (canAfford(tech.cost)) {
-        deductResources(tech.cost);
+    // Apply cost reduction
+    const cost = {};
+    for (const [resource, amount] of Object.entries(tech.cost)) {
+        let finalCost = amount;
+        const costReductionLevel = gameState.prestige.upgrades.costReduction;
+        if (costReductionLevel > 0) {
+            const reduction = 1 - (costReductionLevel * 0.05);
+            finalCost = Math.floor(finalCost * reduction);
+        }
+        if (gameState.research.universalConstructor && techKey !== 'universalConstructor') {
+            finalCost = Math.floor(finalCost * 0.5);
+        }
+        cost[resource] = finalCost;
+    }
+    
+    if (canAfford(cost)) {
+        deductResources(cost);
         gameState.research[techKey] = true;
         addCombatLog(`Researched: ${tech.name}!`, 'victory');
         updateUI();
@@ -359,8 +623,23 @@ function buildShip(shipKey) {
         return;
     }
     
-    if (canAfford(ship.cost)) {
-        deductResources(ship.cost);
+    // Apply cost reduction
+    const cost = {};
+    for (const [resource, amount] of Object.entries(ship.cost)) {
+        let finalCost = amount;
+        const costReductionLevel = gameState.prestige.upgrades.costReduction;
+        if (costReductionLevel > 0) {
+            const reduction = 1 - (costReductionLevel * 0.05);
+            finalCost = Math.floor(finalCost * reduction);
+        }
+        if (gameState.research.universalConstructor) {
+            finalCost = Math.floor(finalCost * 0.5);
+        }
+        cost[resource] = finalCost;
+    }
+    
+    if (canAfford(cost)) {
+        deductResources(cost);
         gameState.ships[shipKey]++;
         updateUI();
     }
@@ -409,6 +688,219 @@ function addCombatLog(message, type = '') {
     }
 }
 
+// Enemy wave system
+function triggerEnemyWave() {
+    if (!gameState.combat.waveEnabled) return;
+    
+    const waveNumber = gameState.combat.waveNumber;
+    
+    // Generate enemy wave based on wave number
+    const enemyCount = Math.min(3 + Math.floor(waveNumber / 5), 10);
+    const enemyPower = 50 + (waveNumber * 20);
+    
+    const waveName = `Enemy Wave ${waveNumber + 1}`;
+    const waveEnemy = {
+        name: waveName,
+        power: enemyPower,
+        reward: {
+            metal: 100 + (waveNumber * 50),
+            energy: 80 + (waveNumber * 40),
+            credits: 200 + (waveNumber * 100)
+        },
+        type: 'wave'
+    };
+    
+    addCombatLog(`⚠️ ${waveName} incoming! Power: ${enemyPower}`, 'defeat');
+    
+    const fleetPower = calculateFleetPower();
+    
+    // Auto-defend if fleet is strong enough
+    if (fleetPower >= waveEnemy.power * 1.1) {
+        for (const [resource, amount] of Object.entries(waveEnemy.reward)) {
+            gameState.resources[resource] += amount;
+        }
+        addCombatLog(`✓ Successfully defended against ${waveName}!`, 'victory');
+        gameState.enemiesDefeated++;
+    } else if (fleetPower > 0) {
+        // Partial defense - some losses
+        const lossRate = Math.min(0.3, (waveEnemy.power - fleetPower) / waveEnemy.power);
+        for (const shipKey in gameState.ships) {
+            const losses = Math.ceil(gameState.ships[shipKey] * lossRate);
+            gameState.ships[shipKey] = Math.max(0, gameState.ships[shipKey] - losses);
+        }
+        addCombatLog(`⚠️ Heavy losses defending against ${waveName}! Lost ${Math.floor(lossRate * 100)}% of fleet.`, 'defeat');
+    } else {
+        // No fleet - lose resources
+        for (const resource in gameState.resources) {
+            gameState.resources[resource] = Math.max(0, gameState.resources[resource] * 0.9);
+        }
+        addCombatLog(`✗ Failed to defend against ${waveName}! Lost 10% of resources.`, 'defeat');
+    }
+    
+    gameState.combat.waveNumber++;
+    gameState.combat.nextWaveTime = Date.now() + (120000); // Next wave in 2 minutes
+    
+    updateUI();
+}
+
+// Toggle enemy waves
+function toggleEnemyWaves() {
+    gameState.combat.waveEnabled = !gameState.combat.waveEnabled;
+    
+    if (gameState.combat.waveEnabled) {
+        gameState.combat.nextWaveTime = Date.now() + 120000; // First wave in 2 minutes
+        gameState.combat.waveNumber = 0;
+        addCombatLog('Enemy waves enabled! Prepare for periodic attacks.', 'victory');
+    } else {
+        addCombatLog('Enemy waves disabled.', 'victory');
+    }
+    
+    updateUI();
+}
+
+// Exploration System
+const sectorTypes = [
+    { name: 'Asteroid Field', bonus: 'metal', multiplier: 1.5 },
+    { name: 'Nebula', bonus: 'energy', multiplier: 1.5 },
+    { name: 'Ancient Ruins', bonus: 'research', multiplier: 2 },
+    { name: 'Trade Hub', bonus: 'credits', multiplier: 2 }
+];
+
+const randomEvents = [
+    { name: 'Derelict Ship', reward: { metal: 500, credits: 1000 } },
+    { name: 'Resource Asteroid', reward: { metal: 1000, energy: 500 } },
+    { name: 'Ancient Artifact', reward: { research: 100, credits: 2000 } },
+    { name: 'Space Anomaly', reward: { energy: 1000, research: 50 } },
+    { name: 'Abandoned Station', reward: { metal: 800, energy: 800, credits: 1500 } }
+];
+
+function exploreSector() {
+    if (!gameState.research.warpDrive) {
+        addCombatLog('Warp Drive required to explore new sectors!', 'defeat');
+        return;
+    }
+    
+    const cost = {
+        energy: 500 + (gameState.exploration.sectorsExplored * 100),
+        credits: 1000 + (gameState.exploration.sectorsExplored * 200)
+    };
+    
+    if (!canAfford(cost)) {
+        addCombatLog('Not enough resources to explore!', 'defeat');
+        return;
+    }
+    
+    deductResources(cost);
+    
+    // Generate sector
+    const sectorType = sectorTypes[Math.floor(Math.random() * sectorTypes.length)];
+    const sectorId = `sector_${gameState.exploration.sectorsExplored}`;
+    
+    gameState.exploration.sectors[sectorId] = {
+        name: `${sectorType.name} ${gameState.exploration.sectorsExplored + 1}`,
+        type: sectorType.name,
+        bonus: sectorType.bonus,
+        multiplier: sectorType.multiplier,
+        controlled: false
+    };
+    
+    gameState.exploration.sectorsExplored++;
+    
+    // Random event chance
+    if (Math.random() < 0.3) {
+        const event = randomEvents[Math.floor(Math.random() * randomEvents.length)];
+        for (const [resource, amount] of Object.entries(event.reward)) {
+            gameState.resources[resource] += amount;
+        }
+        addCombatLog(`Discovered ${event.name}! Gained rewards.`, 'victory');
+    }
+    
+    addCombatLog(`Explored: ${gameState.exploration.sectors[sectorId].name}`, 'victory');
+    updateUI();
+}
+
+function claimSector(sectorId) {
+    const sector = gameState.exploration.sectors[sectorId];
+    
+    if (!sector) return;
+    if (sector.controlled) {
+        addCombatLog('Sector already controlled!', 'defeat');
+        return;
+    }
+    
+    const cost = { credits: 5000, metal: 2000 };
+    
+    if (!canAfford(cost)) {
+        addCombatLog('Not enough resources to claim sector!', 'defeat');
+        return;
+    }
+    
+    deductResources(cost);
+    sector.controlled = true;
+    
+    addCombatLog(`Claimed ${sector.name}! +${Math.floor((sector.multiplier - 1) * 100)}% ${sector.bonus} production`, 'victory');
+    updateUI();
+}
+
+function sendExpedition() {
+    if (!gameState.research.warpDrive) {
+        addCombatLog('Warp Drive required for expeditions!', 'defeat');
+        return;
+    }
+    
+    const fleetPower = calculateFleetPower();
+    if (fleetPower < 100) {
+        addCombatLog('Need at least 100 fleet power for expeditions!', 'defeat');
+        return;
+    }
+    
+    const cost = { energy: 1000, credits: 2000 };
+    
+    if (!canAfford(cost)) {
+        addCombatLog('Not enough resources for expedition!', 'defeat');
+        return;
+    }
+    
+    deductResources(cost);
+    
+    const duration = 60000; // 1 minute
+    const expedition = {
+        startTime: Date.now(),
+        endTime: Date.now() + duration,
+        reward: {
+            metal: 1000 + Math.floor(fleetPower * 2),
+            energy: 800 + Math.floor(fleetPower * 1.5),
+            credits: 2000 + Math.floor(fleetPower * 3),
+            research: Math.floor(fleetPower * 0.5)
+        }
+    };
+    
+    gameState.exploration.expeditions.push(expedition);
+    addCombatLog('Expedition launched! Returns in 1 minute.', 'victory');
+    updateUI();
+}
+
+function checkExpeditions() {
+    const now = Date.now();
+    const completedExpeditions = [];
+    
+    for (let i = 0; i < gameState.exploration.expeditions.length; i++) {
+        const expedition = gameState.exploration.expeditions[i];
+        if (now >= expedition.endTime) {
+            for (const [resource, amount] of Object.entries(expedition.reward)) {
+                gameState.resources[resource] += amount;
+            }
+            completedExpeditions.push(i);
+            addCombatLog('Expedition returned with resources!', 'victory');
+        }
+    }
+    
+    // Remove completed expeditions (in reverse order to maintain indices)
+    for (let i = completedExpeditions.length - 1; i >= 0; i--) {
+        gameState.exploration.expeditions.splice(completedExpeditions[i], 1);
+    }
+}
+
 // Update UI
 function updateUI() {
     // Update resources display
@@ -418,6 +910,12 @@ function updateUI() {
     document.getElementById('energy').textContent = Math.floor(gameState.resources.energy);
     document.getElementById('research').textContent = Math.floor(gameState.resources.research);
     document.getElementById('credits').textContent = Math.floor(gameState.resources.credits);
+    
+    // Update resource caps
+    document.getElementById('metal-cap').textContent = gameState.resourceCaps.metal;
+    document.getElementById('energy-cap').textContent = gameState.resourceCaps.energy;
+    document.getElementById('research-cap').textContent = gameState.resourceCaps.research;
+    document.getElementById('credits-cap').textContent = gameState.resourceCaps.credits;
     
     // Show/hide resource rates based on settings
     const rateElements = document.querySelectorAll('.resource-rate');
@@ -462,21 +960,40 @@ function updateUI() {
     for (const [key, tech] of Object.entries(research)) {
         if (gameState.research[key]) {
             const div = document.createElement('div');
-            div.className = 'research-item researched';
+            const category = tech.category ? ` tech-${tech.category}` : '';
+            div.className = `research-item researched${category}`;
             div.innerHTML = `
                 <h3>${tech.name}</h3>
+                ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
                 <p>${tech.description}</p>
                 <p>✓ Researched</p>
             `;
             researchList.appendChild(div);
         } else if (meetsRequirements(tech.requires)) {
-            const canResearch = canAfford(tech.cost);
+            // Apply cost reduction for display
+            const displayCost = {};
+            for (const [resource, amount] of Object.entries(tech.cost)) {
+                let finalCost = amount;
+                const costReductionLevel = gameState.prestige.upgrades.costReduction;
+                if (costReductionLevel > 0) {
+                    const reduction = 1 - (costReductionLevel * 0.05);
+                    finalCost = Math.floor(finalCost * reduction);
+                }
+                if (gameState.research.universalConstructor && key !== 'universalConstructor') {
+                    finalCost = Math.floor(finalCost * 0.5);
+                }
+                displayCost[resource] = finalCost;
+            }
+            
+            const canResearch = canAfford(displayCost);
             const div = document.createElement('div');
-            div.className = 'research-item';
+            const category = tech.category ? ` tech-${tech.category}` : '';
+            div.className = `research-item${category}`;
             div.innerHTML = `
                 <h3>${tech.name}</h3>
+                ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
                 <p>${tech.description}</p>
-                <p>Cost: ${Object.entries(tech.cost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
+                <p>Cost: ${Object.entries(displayCost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
                 <button onclick="researchTech('${key}')" ${!canResearch ? 'disabled' : ''}>Research</button>
             `;
             researchList.appendChild(div);
@@ -527,21 +1044,132 @@ function updateUI() {
     const enemiesList = document.getElementById('combat-enemies');
     enemiesList.innerHTML = '';
     
+    // Add wave controls
+    const waveControlDiv = document.createElement('div');
+    waveControlDiv.className = 'wave-controls';
+    waveControlDiv.innerHTML = `
+        <h3>Enemy Waves</h3>
+        <p>Periodic enemy attacks that must be defended against</p>
+        <button onclick="toggleEnemyWaves()" class="wave-toggle-btn">
+            ${gameState.combat.waveEnabled ? '✓ Waves Enabled' : 'Enable Waves'}
+        </button>
+        ${gameState.combat.waveEnabled ? `
+            <p>Wave ${gameState.combat.waveNumber + 1} in ${Math.max(0, Math.ceil((gameState.combat.nextWaveTime - Date.now()) / 1000))}s</p>
+        ` : ''}
+    `;
+    enemiesList.appendChild(waveControlDiv);
+    
     for (let i = 0; i < enemies.length; i++) {
         const enemy = enemies[i];
         const fleetPower = calculateFleetPower();
         const canWin = fleetPower >= enemy.power;
         
         const div = document.createElement('div');
-        div.className = 'enemy-item';
+        div.className = `enemy-item ${enemy.type === 'boss' ? 'boss-enemy' : ''}`;
         div.innerHTML = `
             <h3>${enemy.name}</h3>
+            ${enemy.description ? `<p class="enemy-description">${enemy.description}</p>` : ''}
             <p>Power: ${enemy.power}</p>
             <p>Reward: ${Object.entries(enemy.reward).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
             <p>${canWin ? '✓ Can defeat' : '✗ Too powerful'}</p>
             <button onclick="attackEnemy(${i})" ${fleetPower === 0 ? 'disabled' : ''}>Attack</button>
         `;
         enemiesList.appendChild(div);
+    }
+    
+    // Update prestige
+    document.getElementById('dark-matter').textContent = gameState.prestige.darkMatter;
+    document.getElementById('total-resets').textContent = gameState.prestige.totalResets;
+    document.getElementById('next-prestige-gain').textContent = calculatePrestigeGain();
+    
+    const prestigeUpgradesList = document.getElementById('prestige-upgrades-list');
+    prestigeUpgradesList.innerHTML = '';
+    
+    for (const [key, upgrade] of Object.entries(prestigeUpgrades)) {
+        const currentLevel = gameState.prestige.upgrades[key];
+        const cost = getPrestigeUpgradeCost(key);
+        const canBuy = gameState.prestige.darkMatter >= cost && currentLevel < upgrade.maxLevel;
+        
+        const div = document.createElement('div');
+        div.className = 'prestige-upgrade-item';
+        div.innerHTML = `
+            <h4>${upgrade.name}</h4>
+            <p>${upgrade.description}</p>
+            <p>Level: ${currentLevel} / ${upgrade.maxLevel}</p>
+            ${currentLevel < upgrade.maxLevel ? `
+                <p>Cost: ${cost} Dark Matter</p>
+                <button onclick="buyPrestigeUpgrade('${key}')" ${!canBuy ? 'disabled' : ''}>Upgrade</button>
+            ` : '<p>✓ Max Level</p>'}
+        `;
+        prestigeUpgradesList.appendChild(div);
+    }
+    
+    const prestigeMilestonesList = document.getElementById('prestige-milestones-list');
+    prestigeMilestonesList.innerHTML = '';
+    
+    for (const [key, milestone] of Object.entries(prestigeMilestones)) {
+        const achieved = gameState.prestige.milestones[key];
+        let progress = 0;
+        
+        if (key.includes('enemies')) {
+            progress = gameState.enemiesDefeated;
+        } else if (key.includes('resources')) {
+            const totalRes = gameState.resources.metal + gameState.resources.energy + 
+                            gameState.resources.research + gameState.resources.credits;
+            progress = totalRes;
+        } else if (key === 'allTech') {
+            const completedTech = Object.values(gameState.research).filter(val => val === true).length;
+            const totalTech = Object.keys(gameState.research).length;
+            progress = completedTech >= totalTech ? 1 : 0;
+        }
+        
+        const div = document.createElement('div');
+        div.className = `prestige-milestone-item ${achieved ? 'achieved' : ''}`;
+        div.innerHTML = `
+            <h4>${milestone.name} ${achieved ? '✓' : ''}</h4>
+            <p>${milestone.description}</p>
+            <p>Progress: ${Math.min(progress, milestone.requirement)} / ${milestone.requirement}</p>
+        `;
+        prestigeMilestonesList.appendChild(div);
+    }
+    
+    // Update exploration
+    document.getElementById('sectors-explored').textContent = gameState.exploration.sectorsExplored;
+    document.getElementById('active-expeditions').textContent = gameState.exploration.expeditions.length;
+    
+    const sectorsDisplay = document.getElementById('sectors-display');
+    sectorsDisplay.innerHTML = '';
+    
+    for (const [sectorId, sector] of Object.entries(gameState.exploration.sectors)) {
+        if (sector.controlled) {
+            const div = document.createElement('div');
+            div.className = 'sector-item';
+            div.innerHTML = `
+                <h4>${sector.name}</h4>
+                <p>Type: ${sector.type}</p>
+                <p>Bonus: +${Math.floor((sector.multiplier - 1) * 100)}% ${sector.bonus}</p>
+            `;
+            sectorsDisplay.appendChild(div);
+        }
+    }
+    
+    const expeditionsDisplay = document.getElementById('expeditions-display');
+    expeditionsDisplay.innerHTML = '';
+    
+    const now = Date.now();
+    for (const expedition of gameState.exploration.expeditions) {
+        const timeLeft = Math.max(0, Math.ceil((expedition.endTime - now) / 1000));
+        const div = document.createElement('div');
+        div.className = 'expedition-item';
+        div.innerHTML = `
+            <p>⏱️ Returns in ${timeLeft}s</p>
+            <p>Expected: ${Object.entries(expedition.reward).map(([r, a]) => `${r}: ${a}`).join(', ')}</p>
+        `;
+        expeditionsDisplay.appendChild(div);
+    }
+    
+    if (gameState.exploration.expeditions.length === 0) {
+        expeditionsDisplay.innerHTML = '<p>No active expeditions</p>';
     }
 }
 
@@ -559,10 +1187,48 @@ function gameLoop() {
     
     const production = calculateProduction();
     
+    // Calculate resource caps
+    const resourceCaps = {
+        metal: 10000,
+        energy: 10000,
+        research: 5000,
+        credits: 20000
+    };
+    
+    // Apply warehouse bonuses
+    const warehouseCount = gameState.buildings.warehouse || 0;
+    for (const resource in resourceCaps) {
+        resourceCaps[resource] += warehouseCount * 5000;
+    }
+    
     // Add resources based on production and game speed
     for (const [resource, rate] of Object.entries(production)) {
         gameState.resources[resource] += rate * deltaTime * gameSettings.gameSpeed;
+        // Apply caps
+        gameState.resources[resource] = Math.min(gameState.resources[resource], resourceCaps[resource]);
     }
+    
+    // Store caps for UI display
+    gameState.resourceCaps = resourceCaps;
+    
+    // Apply sector bonuses
+    for (const sector of Object.values(gameState.exploration.sectors)) {
+        if (sector.controlled && sector.bonus) {
+            const baseProduction = production[sector.bonus] || 0;
+            const bonus = baseProduction * (sector.multiplier - 1) * deltaTime * gameSettings.gameSpeed;
+            gameState.resources[sector.bonus] += bonus;
+            // Apply caps
+            gameState.resources[sector.bonus] = Math.min(gameState.resources[sector.bonus], resourceCaps[sector.bonus]);
+        }
+    }
+    
+    // Check for enemy waves
+    if (gameState.combat.waveEnabled && now >= gameState.combat.nextWaveTime) {
+        triggerEnemyWave();
+    }
+    
+    // Check expeditions
+    checkExpeditions();
     
     // Auto-combat if enabled
     if (gameSettings.autoCombatEnabled) {
@@ -606,6 +1272,151 @@ function resetGame() {
         localStorage.removeItem('galaxyBuilderSettings');
         location.reload();
     }
+}
+
+// Calculate Dark Matter earned on prestige
+function calculatePrestigeGain() {
+    let darkMatter = 0;
+    
+    // Base dark matter from enemies defeated (1 DM per 10 enemies)
+    darkMatter += Math.floor(gameState.enemiesDefeated / 10);
+    
+    // Dark matter from total resources earned
+    const totalResources = gameState.resources.metal + gameState.resources.energy + 
+                           gameState.resources.research + gameState.resources.credits;
+    darkMatter += Math.floor(totalResources / 100000);
+    
+    // Add milestone bonuses
+    if (gameState.enemiesDefeated >= 100 && !gameState.prestige.milestones.enemies100) {
+        darkMatter += prestigeMilestones.enemies100.bonus;
+    }
+    if (gameState.enemiesDefeated >= 500 && !gameState.prestige.milestones.enemies500) {
+        darkMatter += prestigeMilestones.enemies500.bonus;
+    }
+    if (gameState.enemiesDefeated >= 1000 && !gameState.prestige.milestones.enemies1000) {
+        darkMatter += prestigeMilestones.enemies1000.bonus;
+    }
+    
+    const totalRes = gameState.resources.metal + gameState.resources.energy + 
+                     gameState.resources.research + gameState.resources.credits;
+    if (totalRes >= 1000000 && !gameState.prestige.milestones.resources1M) {
+        darkMatter += prestigeMilestones.resources1M.bonus;
+    }
+    if (totalRes >= 10000000 && !gameState.prestige.milestones.resources10M) {
+        darkMatter += prestigeMilestones.resources10M.bonus;
+    }
+    
+    // Check if all research is complete
+    const allResearchComplete = Object.values(gameState.research).every(val => val === true);
+    if (allResearchComplete && !gameState.prestige.milestones.allTech) {
+        darkMatter += prestigeMilestones.allTech.bonus;
+    }
+    
+    return Math.max(darkMatter, 1); // Minimum 1 dark matter
+}
+
+// Prestige reset
+function prestigeReset() {
+    const dmGain = calculatePrestigeGain();
+    
+    const message = `You will gain ${dmGain} Dark Matter. All progress will be reset, but you'll keep prestige upgrades. Continue?`;
+    if (!confirm(message)) {
+        return;
+    }
+    
+    // Update milestones before reset
+    if (gameState.enemiesDefeated >= 100) gameState.prestige.milestones.enemies100 = true;
+    if (gameState.enemiesDefeated >= 500) gameState.prestige.milestones.enemies500 = true;
+    if (gameState.enemiesDefeated >= 1000) gameState.prestige.milestones.enemies1000 = true;
+    
+    const totalRes = gameState.resources.metal + gameState.resources.energy + 
+                     gameState.resources.research + gameState.resources.credits;
+    if (totalRes >= 1000000) gameState.prestige.milestones.resources1M = true;
+    if (totalRes >= 10000000) gameState.prestige.milestones.resources10M = true;
+    
+    const allResearchComplete = Object.values(gameState.research).every(val => val === true);
+    if (allResearchComplete) gameState.prestige.milestones.allTech = true;
+    
+    // Award dark matter
+    gameState.prestige.darkMatter += dmGain;
+    gameState.prestige.totalResets++;
+    
+    // Save prestige data
+    const prestigeData = JSON.parse(JSON.stringify(gameState.prestige));
+    
+    // Reset resources
+    gameState.resources = {
+        metal: 0,
+        energy: 0,
+        research: 0,
+        credits: 100
+    };
+    
+    // Apply starting bonus if unlocked
+    const startingLevel = gameState.prestige.upgrades.startingBonus;
+    if (startingLevel > 0) {
+        const bonus = startingLevel * 100;
+        gameState.resources.metal += bonus;
+        gameState.resources.energy += bonus;
+        gameState.resources.credits += bonus * 2;
+    }
+    
+    // Reset buildings
+    for (const key in gameState.buildings) {
+        gameState.buildings[key] = 0;
+    }
+    
+    // Reset research
+    for (const key in gameState.research) {
+        gameState.research[key] = false;
+    }
+    
+    // Reset ships
+    for (const key in gameState.ships) {
+        gameState.ships[key] = 0;
+    }
+    
+    // Reset enemies defeated
+    gameState.enemiesDefeated = 0;
+    
+    // Restore prestige data
+    gameState.prestige = prestigeData;
+    
+    saveGame();
+    updateUI();
+    addCombatLog(`Prestige activated! Gained ${dmGain} Dark Matter!`, 'victory');
+}
+
+// Get prestige upgrade cost
+function getPrestigeUpgradeCost(upgradeKey) {
+    const upgrade = prestigeUpgrades[upgradeKey];
+    const currentLevel = gameState.prestige.upgrades[upgradeKey];
+    return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, currentLevel));
+}
+
+// Purchase prestige upgrade
+function buyPrestigeUpgrade(upgradeKey) {
+    const upgrade = prestigeUpgrades[upgradeKey];
+    const currentLevel = gameState.prestige.upgrades[upgradeKey];
+    
+    if (currentLevel >= upgrade.maxLevel) {
+        addCombatLog('Upgrade is already at max level!', 'defeat');
+        return;
+    }
+    
+    const cost = getPrestigeUpgradeCost(upgradeKey);
+    
+    if (gameState.prestige.darkMatter < cost) {
+        addCombatLog('Not enough Dark Matter!', 'defeat');
+        return;
+    }
+    
+    gameState.prestige.darkMatter -= cost;
+    gameState.prestige.upgrades[upgradeKey]++;
+    
+    saveGame();
+    updateUI();
+    addCombatLog(`Purchased ${upgrade.name} level ${gameState.prestige.upgrades[upgradeKey]}!`, 'victory');
 }
 
 // Auto-combat helper
