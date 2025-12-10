@@ -718,14 +718,6 @@ const achievements = {
     },
     
     // Hidden Special Achievements
-    speedRunner: {
-        name: 'Speed Runner',
-        description: 'Defeat 100 enemies in under 30 minutes of gameplay',
-        category: 'special',
-        requirement: () => false, // Tracked separately with timer
-        reward: { darkMatter: 5 },
-        hidden: true
-    },
     pacifist: {
         name: 'Pacifist',
         description: 'Reach 10,000 resources without defeating any enemies',
@@ -742,11 +734,11 @@ const achievements = {
 
 // Resource Conversion Rates
 const resourceConversions = {
-    metalToEnergy: { from: 'metal', to: 'energy', rate: 2, ratio: 0.5 }, // 2 metal -> 1 energy
-    energyToResearch: { from: 'energy', to: 'research', rate: 5, ratio: 0.2 }, // 5 energy -> 1 research
-    metalToCredits: { from: 'metal', to: 'credits', rate: 1, ratio: 2 }, // 1 metal -> 2 credits
-    energyToCredits: { from: 'energy', to: 'credits', rate: 1, ratio: 1.5 }, // 1 energy -> 1.5 credits
-    researchToCredits: { from: 'research', to: 'credits', rate: 1, ratio: 5 } // 1 research -> 5 credits
+    metalToEnergy: { from: 'metal', to: 'energy', inputAmount: 2, outputAmount: 1 }, // 2 metal -> 1 energy
+    energyToResearch: { from: 'energy', to: 'research', inputAmount: 5, outputAmount: 1 }, // 5 energy -> 1 research
+    metalToCredits: { from: 'metal', to: 'credits', inputAmount: 1, outputAmount: 2 }, // 1 metal -> 2 credits
+    energyToCredits: { from: 'energy', to: 'credits', inputAmount: 2, outputAmount: 3 }, // 2 energy -> 3 credits
+    researchToCredits: { from: 'research', to: 'credits', inputAmount: 1, outputAmount: 5 } // 1 research -> 5 credits
 };
 
 // AI Trade Factions
@@ -873,6 +865,15 @@ function calculateProduction() {
         const building = buildings[buildingKey];
         for (const [resource, amount] of Object.entries(building.produces)) {
             production[resource] += amount * count;
+        }
+    }
+    
+    // Apply habitat production bonus
+    if (gameState.buildings.habitat > 0 && buildings.habitat) {
+        const habitatBonus = buildings.habitat.productionBonus;
+        const multiplier = 1 + (habitatBonus * gameState.buildings.habitat);
+        for (const resource in production) {
+            production[resource] *= multiplier;
         }
     }
     
@@ -1739,20 +1740,22 @@ function convertResource(conversionKey, amount) {
     const conversion = resourceConversions[conversionKey];
     if (!conversion) return;
     
-    const conversionRatio = 1 / conversion.ratio;
-    const toAmount = Math.floor(amount / conversion.rate * conversionRatio);
+    // Calculate how many conversions we can do
+    const conversions = Math.floor(amount / conversion.inputAmount);
+    const actualInput = conversions * conversion.inputAmount;
+    const actualOutput = conversions * conversion.outputAmount;
     
     // Check if player has enough
-    if (gameState.resources[conversion.from] < amount) {
+    if (gameState.resources[conversion.from] < actualInput) {
         showNotification(`Not enough ${conversion.from}`, 'error');
         return;
     }
     
     // Perform conversion
-    gameState.resources[conversion.from] -= amount;
-    gameState.resources[conversion.to] += toAmount;
+    gameState.resources[conversion.from] -= actualInput;
+    gameState.resources[conversion.to] += actualOutput;
     
-    showNotification(`Converted ${amount} ${conversion.from} to ${toAmount} ${conversion.to}`, 'success');
+    showNotification(`Converted ${actualInput} ${conversion.from} to ${actualOutput} ${conversion.to}`, 'success');
 }
 
 function updateConversionDisplay() {
@@ -1765,11 +1768,10 @@ function updateConversionDisplay() {
         const div = document.createElement('div');
         div.className = 'conversion-option';
         
-        const ratio = 1 / conversion.ratio;
         div.innerHTML = `
             <h4>${conversion.from} → ${conversion.to}</h4>
-            <p>Rate: ${conversion.rate} ${conversion.from} = ${ratio.toFixed(1)} ${conversion.to}</p>
-            <input type="number" id="convert-${key}" min="0" step="${conversion.rate}" value="${conversion.rate}" />
+            <p>Rate: ${conversion.inputAmount} ${conversion.from} = ${conversion.outputAmount} ${conversion.to}</p>
+            <input type="number" id="convert-${key}" min="0" step="${conversion.inputAmount}" value="${conversion.inputAmount}" />
             <button onclick="convertResource('${key}', parseInt(document.getElementById('convert-${key}').value))">Convert</button>
         `;
         
@@ -1974,13 +1976,16 @@ function applyBuildingEffects(deltaTime) {
         const interestPerSecond = bank.interestRate / 60; // Convert per-minute to per-second
         const interest = gameState.resources.credits * interestPerSecond * gameState.buildings.bank * deltaTime;
         gameState.resources.credits += interest;
+        gameState.achievements.stats.totalResourcesEarned += interest;
     }
     
     // Mining Ships: Passive resource collection
     if (gameState.ships.miningShip > 0) {
         const miningShip = ships.miningShip;
         for (const [resource, amount] of Object.entries(miningShip.miningBonus)) {
-            gameState.resources[resource] += amount * gameState.ships.miningShip * deltaTime;
+            const collected = amount * gameState.ships.miningShip * deltaTime;
+            gameState.resources[resource] += collected;
+            gameState.achievements.stats.totalResourcesEarned += collected;
         }
     }
 }
