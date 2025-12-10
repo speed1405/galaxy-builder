@@ -1361,6 +1361,28 @@ const galaxyTemplates = {
 };
 
 
+// Default credit cost for first building if not specified
+const DEFAULT_FIRST_BUILDING_COST = 10;
+
+// Apply cost reduction bonuses (prestige and research)
+function applyCostReductions(baseCost) {
+    let finalCost = baseCost;
+    
+    // Apply prestige cost reduction
+    const costReductionLevel = gameState.prestige.upgrades.costReduction;
+    if (costReductionLevel > 0) {
+        const reduction = 1 - (costReductionLevel * 0.05);
+        finalCost = Math.floor(finalCost * reduction);
+    }
+    
+    // Apply universal constructor
+    if (gameState.research.universalConstructor) {
+        finalCost = Math.floor(finalCost * 0.5);
+    }
+    
+    return finalCost;
+}
+
 // Calculate building cost with scaling
 function getBuildingCost(buildingKey) {
     const building = buildings[buildingKey];
@@ -1369,41 +1391,15 @@ function getBuildingCost(buildingKey) {
     
     // First building of each type costs credits only
     if (count === 0) {
-        // Only charge credits for the first building
-        let creditCost = building.baseCost.credits || 10;
-        
-        // Apply prestige cost reduction to first building
-        const costReductionLevel = gameState.prestige.upgrades.costReduction;
-        if (costReductionLevel > 0) {
-            const reduction = 1 - (costReductionLevel * 0.05);
-            creditCost = Math.floor(creditCost * reduction);
-        }
-        
-        // Apply universal constructor to first building
-        if (gameState.research.universalConstructor) {
-            creditCost = Math.floor(creditCost * 0.5);
-        }
-        
-        cost.credits = creditCost;
+        const creditCost = building.baseCost.credits || DEFAULT_FIRST_BUILDING_COST;
+        cost.credits = applyCostReductions(creditCost);
         return cost;
     }
     
+    // Subsequent buildings use normal scaling
     for (const [resource, amount] of Object.entries(building.baseCost)) {
-        let finalCost = Math.floor(amount * Math.pow(building.costMultiplier, count));
-        
-        // Apply prestige cost reduction
-        const costReductionLevel = gameState.prestige.upgrades.costReduction;
-        if (costReductionLevel > 0) {
-            const reduction = 1 - (costReductionLevel * 0.05);
-            finalCost = Math.floor(finalCost * reduction);
-        }
-        
-        // Apply universal constructor
-        if (gameState.research.universalConstructor) {
-            finalCost = Math.floor(finalCost * 0.5);
-        }
-        
-        cost[resource] = finalCost;
+        const scaledCost = Math.floor(amount * Math.pow(building.costMultiplier, count));
+        cost[resource] = applyCostReductions(scaledCost);
     }
     
     return cost;
