@@ -837,10 +837,6 @@ footer {
 }
 
 /* Theme Switching */
-body.theme-dark {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-}
-
 body.theme-light {
     background: linear-gradient(135deg, #e0e7ff 0%, #cfe2ff 50%, #b6d7ff 100%);
     color: #1a1a2e;

@@ -3345,10 +3345,20 @@ function updateSettingsUI() {
 function applySetting(settingName, value) {
     // Validate settingName to prevent unintended property modification
     const allowedSettings = [
-        'autoSaveEnabled', 'autoSaveInterval', 'gameSpeed', 'showResourceRates',
-        'showNotifications', 'confirmReset', 'confirmBulkActions', 
-        'autoCombatEnabled', 'offlineProgressEnabled', 'theme',
-        'soundEffectsEnabled', 'musicEnabled', 'masterVolume', 'showTooltips'
+        'autoSaveEnabled',
+        'autoSaveInterval',
+        'gameSpeed',
+        'showResourceRates',
+        'showNotifications',
+        'confirmReset',
+        'confirmBulkActions',
+        'autoCombatEnabled',
+        'offlineProgressEnabled',
+        'theme',
+        'soundEffectsEnabled',
+        'musicEnabled',
+        'masterVolume',
+        'showTooltips'
     ];
     
     if (!allowedSettings.includes(settingName)) {
