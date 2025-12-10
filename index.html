@@ -122,6 +122,7 @@
                         <p>Active Expeditions: <span id="active-expeditions">0</span></p>
                         <button onclick="exploreSector()" class="explore-btn">Explore New Sector</button>
                         <button onclick="sendExpedition()" class="expedition-btn">Send Expedition</button>
+                        <button onclick="establishColony()" class="colony-btn">Establish Colony</button>
                     </div>
                     <div class="sectors-list">
                         <h3>Controlled Sectors</h3>
@@ -130,6 +131,43 @@
                     <div class="expeditions-list">
                         <h3>Expeditions</h3>
                         <div id="expeditions-display"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Achievements Section -->
+            <section class="panel achievements-panel">
+                <h2>🏆 Achievements</h2>
+                <div class="achievements-content">
+                    <div class="achievement-stats">
+                        <p>Unlocked: <span id="achievements-unlocked">0</span> / <span id="achievements-total">0</span></p>
+                    </div>
+                    <div class="achievement-categories">
+                        <button onclick="filterAchievements('all')" class="category-btn active">All</button>
+                        <button onclick="filterAchievements('combat')" class="category-btn">Combat</button>
+                        <button onclick="filterAchievements('economy')" class="category-btn">Economy</button>
+                        <button onclick="filterAchievements('research')" class="category-btn">Research</button>
+                        <button onclick="filterAchievements('exploration')" class="category-btn">Exploration</button>
+                    </div>
+                    <div id="achievements-display" class="achievements-grid"></div>
+                </div>
+            </section>
+
+            <!-- Resource Management Section -->
+            <section class="panel resource-management-panel">
+                <h2>🔄 Resource Management</h2>
+                <div class="resource-management-content">
+                    <div class="conversion-section">
+                        <h3>Resource Conversion</h3>
+                        <div id="conversion-options" class="conversion-grid"></div>
+                    </div>
+                    <div class="trading-section">
+                        <h3>Import/Export</h3>
+                        <div id="trading-factions" class="trading-grid"></div>
+                    </div>
+                    <div class="nodes-section">
+                        <h3>Resource Nodes</h3>
+                        <div id="resource-nodes-display" class="nodes-grid"></div>
                     </div>
                 </div>
             </section>

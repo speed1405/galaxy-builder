@@ -59,7 +59,13 @@ const gameState = {
         researchLab: 0,
         shipyard: 0,
         tradingPost: 0,
-        warehouse: 0
+        warehouse: 0,
+        refinery: 0,
+        defensePlatform: 0,
+        factory: 0,
+        bank: 0,
+        habitat: 0,
+        researchAccelerator: 0
     },
     research: {
         basicEngineering: false,
@@ -94,7 +100,12 @@ const gameState = {
         corvette: 0,
         destroyer: 0,
         cruiser: 0,
-        battleship: 0
+        battleship: 0,
+        supportShip: 0,
+        stealthShip: 0,
+        carrier: 0,
+        miningShip: 0,
+        colonyShip: 0
     },
     enemiesDefeated: 0,
     prestige: {
@@ -125,7 +136,26 @@ const gameState = {
         sectorsExplored: 0,
         sectors: {},
         nextExplorationTime: 0,
-        expeditions: []
+        expeditions: [],
+        resourceNodes: [] // Active resource nodes being mined
+    },
+    trading: {
+        availableTrades: [],
+        tradeHistory: []
+    },
+    achievements: {
+        unlocked: [],
+        stats: {
+            totalResourcesEarned: 0,
+            totalShipsBuilt: 0,
+            totalBuildingsBuilt: 0,
+            totalResearchCompleted: 0,
+            maxFleetPower: 0,
+            prestigeCount: 0,
+            bossesDefeated: 0,
+            expeditionsCompleted: 0,
+            coloniesEstablished: 0
+        }
     },
     lastUpdate: Date.now()
 };
@@ -177,6 +207,61 @@ const buildings = {
         produces: {},
         costMultiplier: 1.5,
         capBonus: 5000 // Increases all caps by 5000
+    },
+    refinery: {
+        name: 'Refinery',
+        description: 'Converts basic resources into more valuable ones',
+        baseCost: { metal: 150, energy: 100, credits: 300 },
+        produces: {},
+        costMultiplier: 1.4,
+        requires: 'advancedMaterials',
+        refinesPerSecond: 10 // Converts 10 metal -> 5 energy per second
+    },
+    defensePlatform: {
+        name: 'Defense Platform',
+        description: 'Protects against enemy raids (+50 defense power each)',
+        baseCost: { metal: 200, energy: 150, credits: 400 },
+        produces: {},
+        costMultiplier: 1.35,
+        requires: 'plasmaCannons',
+        defensePower: 50
+    },
+    factory: {
+        name: 'Factory',
+        description: 'Automated ship production (produces 1 scout every 60s)',
+        baseCost: { metal: 300, energy: 200, credits: 500 },
+        produces: {},
+        costMultiplier: 1.5,
+        requires: 'nanoTechnology',
+        autoProduceShip: 'scout',
+        autoProduceInterval: 60 // seconds
+    },
+    bank: {
+        name: 'Bank',
+        description: 'Generates interest on stored credits (+1% per bank per minute)',
+        baseCost: { metal: 100, energy: 50, credits: 1000 },
+        produces: {},
+        costMultiplier: 1.6,
+        requires: 'galacticTrade',
+        interestRate: 0.01 // 1% per minute
+    },
+    habitat: {
+        name: 'Habitat',
+        description: 'Houses population (+10 workers, +5% all production per habitat)',
+        baseCost: { metal: 250, energy: 150, credits: 600 },
+        produces: {},
+        costMultiplier: 1.45,
+        requires: 'advancedMaterials',
+        populationBonus: 10,
+        productionBonus: 0.05 // 5% production boost
+    },
+    researchAccelerator: {
+        name: 'Research Accelerator',
+        description: 'Boosts research point generation (+2 research/s)',
+        baseCost: { metal: 200, energy: 300, credits: 500 },
+        produces: { research: 2 },
+        costMultiplier: 1.55,
+        requires: 'quantumComputing'
     }
 };
 
@@ -367,6 +452,46 @@ const ships = {
         cost: { metal: 800, energy: 500, credits: 1200 },
         power: 400,
         requires: 'advancedWeaponry'
+    },
+    supportShip: {
+        name: 'Support Ship',
+        description: 'Heals and buffs other ships (+10% fleet effectiveness)',
+        cost: { metal: 150, energy: 200, credits: 300 },
+        power: 20,
+        requires: 'nanoTechnology',
+        supportBonus: 0.10 // 10% fleet boost
+    },
+    stealthShip: {
+        name: 'Stealth Ship',
+        description: 'Special reconnaissance and sabotage missions',
+        cost: { metal: 250, energy: 150, credits: 400 },
+        power: 50,
+        requires: 'tacticalSystems',
+        stealthBonus: true // Enables special missions
+    },
+    carrier: {
+        name: 'Carrier',
+        description: 'Launches fighter squadrons (+5 virtual fighters per carrier)',
+        cost: { metal: 600, energy: 400, credits: 900 },
+        power: 100,
+        requires: 'warpDrive',
+        carrierBonus: 5 // Each carrier adds power equivalent to 5 fighters
+    },
+    miningShip: {
+        name: 'Mining Ship',
+        description: 'Passive resource collection (+5 metal/s and +3 energy/s)',
+        cost: { metal: 200, energy: 100, credits: 250 },
+        power: 10,
+        requires: 'advancedMining',
+        miningBonus: { metal: 5, energy: 3 }
+    },
+    colonyShip: {
+        name: 'Colony Ship',
+        description: 'Establishes outposts on new worlds (consumed on use)',
+        cost: { metal: 500, energy: 300, credits: 800 },
+        power: 5,
+        requires: 'warpDrive',
+        colonizable: true
     }
 };
 
@@ -435,6 +560,260 @@ const prestigeMilestones = {
     resources10M: { name: 'Earn 10M Total Resources', requirement: 10000000, bonus: 8, description: '+8 Dark Matter on prestige' },
     allTech: { name: 'Research All Technologies', requirement: 1, bonus: 5, description: '+5 Dark Matter on prestige' }
 };
+
+// Achievement Definitions
+const achievements = {
+    // Combat Achievements
+    firstBlood: {
+        name: 'First Blood',
+        description: 'Defeat your first enemy',
+        category: 'combat',
+        requirement: () => gameState.enemiesDefeated >= 1,
+        reward: { credits: 100 },
+        hidden: false
+    },
+    warrior: {
+        name: 'Warrior',
+        description: 'Defeat 50 enemies',
+        category: 'combat',
+        requirement: () => gameState.enemiesDefeated >= 50,
+        reward: { credits: 500, metal: 200 },
+        hidden: false
+    },
+    bossSlayer: {
+        name: 'Boss Slayer',
+        description: 'Defeat a boss enemy',
+        category: 'combat',
+        requirement: () => gameState.achievements.stats.bossesDefeated >= 1,
+        reward: { darkMatter: 1 },
+        hidden: false
+    },
+    fleetCommander: {
+        name: 'Fleet Commander',
+        description: 'Reach 1000 total fleet power',
+        category: 'combat',
+        requirement: () => calculateFleetPower() >= 1000,
+        reward: { credits: 1000 },
+        hidden: false
+    },
+    
+    // Economy Achievements
+    resourceful: {
+        name: 'Resourceful',
+        description: 'Earn 100,000 total resources',
+        category: 'economy',
+        requirement: () => gameState.achievements.stats.totalResourcesEarned >= 100000,
+        reward: { metal: 500, energy: 500 },
+        hidden: false
+    },
+    builder: {
+        name: 'Builder',
+        description: 'Construct 50 buildings',
+        category: 'economy',
+        requirement: () => gameState.achievements.stats.totalBuildingsBuilt >= 50,
+        reward: { credits: 800 },
+        hidden: false
+    },
+    magnate: {
+        name: 'Magnate',
+        description: 'Accumulate 50,000 credits at once',
+        category: 'economy',
+        requirement: () => gameState.resources.credits >= 50000,
+        reward: { credits: 5000 },
+        hidden: false
+    },
+    industrialist: {
+        name: 'Industrialist',
+        description: 'Build 10 factories',
+        category: 'economy',
+        requirement: () => gameState.buildings.factory >= 10,
+        reward: { metal: 1000, energy: 500 },
+        hidden: true
+    },
+    
+    // Research Achievements
+    scientist: {
+        name: 'Scientist',
+        description: 'Complete 5 research projects',
+        category: 'research',
+        requirement: () => gameState.achievements.stats.totalResearchCompleted >= 5,
+        reward: { research: 50 },
+        hidden: false
+    },
+    technocrat: {
+        name: 'Technocrat',
+        description: 'Complete 15 research projects',
+        category: 'research',
+        requirement: () => gameState.achievements.stats.totalResearchCompleted >= 15,
+        reward: { research: 200, credits: 1000 },
+        hidden: false
+    },
+    quantumMind: {
+        name: 'Quantum Mind',
+        description: 'Research Quantum Physics',
+        category: 'research',
+        requirement: () => gameState.research.quantumPhysics,
+        reward: { darkMatter: 2 },
+        hidden: false
+    },
+    megaEngineer: {
+        name: 'Mega Engineer',
+        description: 'Complete a mega-project',
+        category: 'research',
+        requirement: () => gameState.research.dysonSphere || gameState.research.galaxyNetwork || gameState.research.universalConstructor,
+        reward: { darkMatter: 3 },
+        hidden: true
+    },
+    
+    // Exploration Achievements
+    explorer: {
+        name: 'Explorer',
+        description: 'Explore 5 sectors',
+        category: 'exploration',
+        requirement: () => gameState.exploration.sectorsExplored >= 5,
+        reward: { credits: 500, research: 50 },
+        hidden: false
+    },
+    pioneer: {
+        name: 'Pioneer',
+        description: 'Explore 20 sectors',
+        category: 'exploration',
+        requirement: () => gameState.exploration.sectorsExplored >= 20,
+        reward: { metal: 1000, energy: 1000, credits: 2000 },
+        hidden: false
+    },
+    expeditionary: {
+        name: 'Expeditionary',
+        description: 'Complete 10 expeditions',
+        category: 'exploration',
+        requirement: () => gameState.achievements.stats.expeditionsCompleted >= 10,
+        reward: { research: 200 },
+        hidden: false
+    },
+    colonizer: {
+        name: 'Colonizer',
+        description: 'Establish 5 colonies',
+        category: 'exploration',
+        requirement: () => gameState.achievements.stats.coloniesEstablished >= 5,
+        reward: { darkMatter: 1 },
+        hidden: true
+    },
+    
+    // Prestige Achievements
+    ascended: {
+        name: 'Ascended',
+        description: 'Prestige for the first time',
+        category: 'prestige',
+        requirement: () => gameState.prestige.totalResets >= 1,
+        reward: { darkMatter: 5 },
+        hidden: false
+    },
+    reborn: {
+        name: 'Reborn',
+        description: 'Prestige 10 times',
+        category: 'prestige',
+        requirement: () => gameState.prestige.totalResets >= 10,
+        reward: { darkMatter: 10 },
+        hidden: false
+    },
+    
+    // Hidden Special Achievements
+    speedRunner: {
+        name: 'Speed Runner',
+        description: 'Defeat 100 enemies in under 30 minutes of gameplay',
+        category: 'special',
+        requirement: () => false, // Tracked separately with timer
+        reward: { darkMatter: 5 },
+        hidden: true
+    },
+    pacifist: {
+        name: 'Pacifist',
+        description: 'Reach 10,000 resources without defeating any enemies',
+        category: 'special',
+        requirement: () => {
+            const totalResources = gameState.resources.metal + gameState.resources.energy + 
+                                   gameState.resources.research + gameState.resources.credits;
+            return totalResources >= 10000 && gameState.enemiesDefeated === 0;
+        },
+        reward: { darkMatter: 3 },
+        hidden: true
+    }
+};
+
+// Resource Conversion Rates
+const resourceConversions = {
+    metalToEnergy: { from: 'metal', to: 'energy', rate: 2, ratio: 0.5 }, // 2 metal -> 1 energy
+    energyToResearch: { from: 'energy', to: 'research', rate: 5, ratio: 0.2 }, // 5 energy -> 1 research
+    metalToCredits: { from: 'metal', to: 'credits', rate: 1, ratio: 2 }, // 1 metal -> 2 credits
+    energyToCredits: { from: 'energy', to: 'credits', rate: 1, ratio: 1.5 }, // 1 energy -> 1.5 credits
+    researchToCredits: { from: 'research', to: 'credits', rate: 1, ratio: 5 } // 1 research -> 5 credits
+};
+
+// AI Trade Factions
+const tradeFactions = {
+    terranAlliance: {
+        name: 'Terran Alliance',
+        description: 'Human-led federation offering balanced trades',
+        trades: [
+            { offer: { metal: 100 }, request: { credits: 150 }, unlocked: true },
+            { offer: { energy: 100 }, request: { credits: 120 }, unlocked: true },
+            { offer: { credits: 500 }, request: { metal: 300, energy: 200 }, requires: 'galacticTrade' }
+        ]
+    },
+    crystallineConsortium: {
+        name: 'Crystalline Consortium',
+        description: 'Energy-focused traders from crystal worlds',
+        trades: [
+            { offer: { energy: 200 }, request: { metal: 150 }, requires: 'energyEfficiency' },
+            { offer: { energy: 500 }, request: { credits: 400 }, requires: 'fusionPower' }
+        ]
+    },
+    scientificEnclave: {
+        name: 'Scientific Enclave',
+        description: 'Research-focused civilization',
+        trades: [
+            { offer: { research: 50 }, request: { metal: 200, energy: 200 }, requires: 'researchNetwork' },
+            { offer: { research: 100 }, request: { credits: 1000 }, requires: 'quantumComputing' }
+        ]
+    }
+};
+
+// Resource Nodes (depletable sources)
+const resourceNodeTypes = {
+    richAsteroid: {
+        name: 'Rich Asteroid Field',
+        description: 'Dense asteroid field with abundant metal',
+        resource: 'metal',
+        totalYield: 5000,
+        miningRate: 10, // per second
+        discoveryChance: 0.3
+    },
+    energyNebula: {
+        name: 'Energy Nebula',
+        description: 'Nebula with harvestable energy',
+        resource: 'energy',
+        totalYield: 4000,
+        miningRate: 8,
+        discoveryChance: 0.25
+    },
+    ancientCache: {
+        name: 'Ancient Research Cache',
+        description: 'Lost civilization data stores',
+        resource: 'research',
+        totalYield: 2000,
+        miningRate: 5,
+        discoveryChance: 0.15
+    },
+    tradingHub: {
+        name: 'Abandoned Trading Hub',
+        description: 'Derelict station with credits',
+        resource: 'credits',
+        totalYield: 10000,
+        miningRate: 20,
+        discoveryChance: 0.2
+    }
+};
+
 
 // Calculate building cost with scaling
 function getBuildingCost(buildingKey) {
@@ -536,7 +915,32 @@ function calculateFleetPower() {
     
     for (const [shipKey, count] of Object.entries(gameState.ships)) {
         const ship = ships[shipKey];
+        if (!ship) continue;
         power += ship.power * count;
+    }
+    
+    // Apply carrier bonus (each carrier adds power of virtual fighters)
+    if (gameState.ships.carrier > 0 && ships.carrier) {
+        const carrierBonus = ships.carrier.carrierBonus;
+        const fighterPower = ships.fighter ? ships.fighter.power : 15;
+        power += carrierBonus * fighterPower * gameState.ships.carrier;
+    }
+    
+    // Apply support ship bonus
+    if (gameState.ships.supportShip > 0 && ships.supportShip) {
+        const supportBonus = ships.supportShip.supportBonus;
+        power *= (1 + supportBonus * gameState.ships.supportShip);
+    }
+    
+    // Apply defense platform bonus
+    if (gameState.buildings.defensePlatform > 0 && buildings.defensePlatform) {
+        power += buildings.defensePlatform.defensePower * gameState.buildings.defensePlatform;
+    }
+    
+    // Apply habitat production bonus (affects fleet effectiveness)
+    if (gameState.buildings.habitat > 0 && buildings.habitat) {
+        const habitatBonus = buildings.habitat.productionBonus;
+        power *= (1 + habitatBonus * gameState.buildings.habitat);
     }
     
     // Apply research bonuses
@@ -571,6 +975,7 @@ function buildBuilding(buildingKey) {
     if (canAfford(cost)) {
         deductResources(cost);
         gameState.buildings[buildingKey]++;
+        gameState.achievements.stats.totalBuildingsBuilt++;
         updateUI();
     }
 }
@@ -604,6 +1009,7 @@ function researchTech(techKey) {
     if (canAfford(cost)) {
         deductResources(cost);
         gameState.research[techKey] = true;
+        gameState.achievements.stats.totalResearchCompleted++;
         addCombatLog(`Researched: ${tech.name}!`, 'victory');
         updateUI();
     }
@@ -641,6 +1047,7 @@ function buildShip(shipKey) {
     if (canAfford(cost)) {
         deductResources(cost);
         gameState.ships[shipKey]++;
+        gameState.achievements.stats.totalShipsBuilt++;
         updateUI();
     }
 }
@@ -659,8 +1066,18 @@ function attackEnemy(enemyIndex) {
         // Victory
         for (const [resource, amount] of Object.entries(enemy.reward)) {
             gameState.resources[resource] += amount;
+            gameState.achievements.stats.totalResourcesEarned += amount;
         }
         gameState.enemiesDefeated++;
+        
+        // Track boss defeats
+        if (enemy.type === 'boss') {
+            if (!gameState.achievements.stats.bossesDefeated) {
+                gameState.achievements.stats.bossesDefeated = 0;
+            }
+            gameState.achievements.stats.bossesDefeated++;
+        }
+        
         addCombatLog(`Victory against ${enemy.name}! Gained rewards.`, 'victory');
     } else {
         // Defeat - lose some ships
@@ -815,6 +1232,9 @@ function exploreSector() {
         addCombatLog(`Discovered ${event.name}! Gained rewards.`, 'victory');
     }
     
+    // Chance to discover resource node
+    discoverResourceNode();
+    
     addCombatLog(`Explored: ${gameState.exploration.sectors[sectorId].name}`, 'victory');
     updateUI();
 }
@@ -898,7 +1318,51 @@ function checkExpeditions() {
     // Remove completed expeditions (in reverse order to maintain indices)
     for (let i = completedExpeditions.length - 1; i >= 0; i--) {
         gameState.exploration.expeditions.splice(completedExpeditions[i], 1);
+        if (!gameState.achievements.stats.expeditionsCompleted) {
+            gameState.achievements.stats.expeditionsCompleted = 0;
+        }
+        gameState.achievements.stats.expeditionsCompleted++;
     }
+}
+
+// Establish colony with colony ship
+function establishColony() {
+    if (gameState.ships.colonyShip < 1) {
+        addCombatLog('Need a Colony Ship to establish a colony!', 'defeat');
+        return;
+    }
+    
+    if (gameState.exploration.sectorsExplored < 5) {
+        addCombatLog('Explore at least 5 sectors before colonizing!', 'defeat');
+        return;
+    }
+    
+    const cost = {
+        metal: 5000,
+        energy: 3000,
+        credits: 10000
+    };
+    
+    if (!canAfford(cost)) {
+        addCombatLog('Not enough resources to establish colony!', 'defeat');
+        return;
+    }
+    
+    deductResources(cost);
+    gameState.ships.colonyShip--; // Colony ship is consumed
+    
+    // Grant bonus resources and production
+    gameState.resources.metal += 2000;
+    gameState.resources.energy += 1500;
+    
+    // Track colony establishment
+    if (!gameState.achievements.stats.coloniesEstablished) {
+        gameState.achievements.stats.coloniesEstablished = 0;
+    }
+    gameState.achievements.stats.coloniesEstablished++;
+    
+    addCombatLog(`Colony established! Colony Ship consumed. Production increased.`, 'victory');
+    updateUI();
 }
 
 // Update UI
@@ -1171,6 +1635,352 @@ function updateUI() {
     if (gameState.exploration.expeditions.length === 0) {
         expeditionsDisplay.innerHTML = '<p>No active expeditions</p>';
     }
+    
+    // Update new UI elements
+    updateAchievementsDisplay();
+    updateConversionDisplay();
+    updateTradingDisplay();
+    updateResourceNodesDisplay();
+}
+
+// Achievement System Functions
+function checkAchievements() {
+    for (const [key, achievement] of Object.entries(achievements)) {
+        // Skip if already unlocked
+        if (gameState.achievements.unlocked.includes(key)) continue;
+        
+        // Check requirement
+        if (achievement.requirement()) {
+            unlockAchievement(key);
+        }
+    }
+}
+
+function unlockAchievement(key) {
+    if (gameState.achievements.unlocked.includes(key)) return;
+    
+    gameState.achievements.unlocked.push(key);
+    const achievement = achievements[key];
+    
+    // Grant rewards
+    if (achievement.reward) {
+        for (const [resource, amount] of Object.entries(achievement.reward)) {
+            if (resource === 'darkMatter') {
+                gameState.prestige.darkMatter += amount;
+            } else if (gameState.resources[resource] !== undefined) {
+                gameState.resources[resource] += amount;
+            }
+        }
+    }
+    
+    // Show notification
+    if (gameSettings.showNotifications) {
+        showNotification(`🏆 Achievement Unlocked: ${achievement.name}!`, 'achievement');
+    }
+    
+    updateAchievementsDisplay();
+}
+
+function updateAchievementsDisplay() {
+    const achievementsDisplay = document.getElementById('achievements-display');
+    if (!achievementsDisplay) return;
+    
+    achievementsDisplay.innerHTML = '';
+    
+    for (const [key, achievement] of Object.entries(achievements)) {
+        const isUnlocked = gameState.achievements.unlocked.includes(key);
+        const isHidden = achievement.hidden && !isUnlocked;
+        
+        if (isHidden) continue;
+        
+        const div = document.createElement('div');
+        div.className = `achievement-item ${isUnlocked ? 'unlocked' : 'locked'} ${achievement.category}`;
+        
+        const rewardText = achievement.reward ? 
+            Object.entries(achievement.reward).map(([r, a]) => `${r}: +${a}`).join(', ') : 'None';
+        
+        div.innerHTML = `
+            <div class="achievement-icon">${isUnlocked ? '🏆' : '🔒'}</div>
+            <div class="achievement-info">
+                <h4>${achievement.name}</h4>
+                <p>${achievement.description}</p>
+                <small>Reward: ${rewardText}</small>
+                <span class="achievement-category">${achievement.category}</span>
+            </div>
+        `;
+        
+        achievementsDisplay.appendChild(div);
+    }
+    
+    // Update count
+    document.getElementById('achievements-unlocked').textContent = gameState.achievements.unlocked.length;
+    document.getElementById('achievements-total').textContent = Object.keys(achievements).length;
+}
+
+function filterAchievements(category) {
+    const buttons = document.querySelectorAll('.category-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const items = document.querySelectorAll('.achievement-item');
+    items.forEach(item => {
+        if (category === 'all' || item.classList.contains(category)) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// Resource Conversion Functions
+function convertResource(conversionKey, amount) {
+    const conversion = resourceConversions[conversionKey];
+    if (!conversion) return;
+    
+    const fromAmount = amount;
+    const toAmount = Math.floor(fromAmount / conversion.rate * (1 / conversion.ratio));
+    
+    // Check if player has enough
+    if (gameState.resources[conversion.from] < fromAmount) {
+        showNotification(`Not enough ${conversion.from}`, 'error');
+        return;
+    }
+    
+    // Perform conversion
+    gameState.resources[conversion.from] -= fromAmount;
+    gameState.resources[conversion.to] += toAmount;
+    
+    showNotification(`Converted ${fromAmount} ${conversion.from} to ${toAmount} ${conversion.to}`, 'success');
+}
+
+function updateConversionDisplay() {
+    const conversionOptions = document.getElementById('conversion-options');
+    if (!conversionOptions) return;
+    
+    conversionOptions.innerHTML = '';
+    
+    for (const [key, conversion] of Object.entries(resourceConversions)) {
+        const div = document.createElement('div');
+        div.className = 'conversion-option';
+        
+        const ratio = 1 / conversion.ratio;
+        div.innerHTML = `
+            <h4>${conversion.from} → ${conversion.to}</h4>
+            <p>Rate: ${conversion.rate} ${conversion.from} = ${ratio.toFixed(1)} ${conversion.to}</p>
+            <input type="number" id="convert-${key}" min="0" step="${conversion.rate}" value="${conversion.rate}" />
+            <button onclick="convertResource('${key}', parseInt(document.getElementById('convert-${key}').value))">Convert</button>
+        `;
+        
+        conversionOptions.appendChild(div);
+    }
+}
+
+// Trading Functions
+function executeTrade(factionKey, tradeIndex) {
+    const faction = tradeFactions[factionKey];
+    const trade = faction.trades[tradeIndex];
+    
+    // Check requirements
+    if (trade.requires && !gameState.research[trade.requires]) {
+        showNotification(`Requires ${trade.requires} research`, 'error');
+        return;
+    }
+    
+    // Check if can afford request
+    if (!canAfford(trade.request)) {
+        showNotification('Cannot afford this trade', 'error');
+        return;
+    }
+    
+    // Execute trade
+    deductResources(trade.request);
+    for (const [resource, amount] of Object.entries(trade.offer)) {
+        gameState.resources[resource] += amount;
+    }
+    
+    // Track trade
+    gameState.trading.tradeHistory.push({
+        faction: factionKey,
+        trade: tradeIndex,
+        timestamp: Date.now()
+    });
+    
+    showNotification(`Trade completed with ${faction.name}`, 'success');
+    updateTradingDisplay();
+}
+
+function updateTradingDisplay() {
+    const tradingFactions = document.getElementById('trading-factions');
+    if (!tradingFactions) return;
+    
+    tradingFactions.innerHTML = '';
+    
+    for (const [key, faction] of Object.entries(tradeFactions)) {
+        const div = document.createElement('div');
+        div.className = 'faction-trades';
+        
+        let tradesHTML = '';
+        faction.trades.forEach((trade, index) => {
+            const unlocked = !trade.requires || gameState.research[trade.requires];
+            const canAffordTrade = canAfford(trade.request);
+            
+            if (unlocked) {
+                const offerText = Object.entries(trade.offer).map(([r, a]) => `${a} ${r}`).join(', ');
+                const requestText = Object.entries(trade.request).map(([r, a]) => `${a} ${r}`).join(', ');
+                
+                tradesHTML += `
+                    <div class="trade-option ${canAffordTrade ? 'affordable' : 'expensive'}">
+                        <p>Give: ${requestText}</p>
+                        <p>Get: ${offerText}</p>
+                        <button onclick="executeTrade('${key}', ${index})" ${canAffordTrade ? '' : 'disabled'}>Trade</button>
+                    </div>
+                `;
+            }
+        });
+        
+        div.innerHTML = `
+            <h4>${faction.name}</h4>
+            <p class="faction-desc">${faction.description}</p>
+            <div class="trades-list">${tradesHTML || '<p>No trades available</p>'}</div>
+        `;
+        
+        tradingFactions.appendChild(div);
+    }
+}
+
+// Resource Nodes Functions
+function updateResourceNodes(deltaTime) {
+    const nodes = gameState.exploration.resourceNodes;
+    
+    for (let i = nodes.length - 1; i >= 0; i--) {
+        const node = nodes[i];
+        const nodeType = resourceNodeTypes[node.type];
+        
+        // Mine resources
+        const mineAmount = Math.min(nodeType.miningRate * deltaTime, node.remainingYield);
+        gameState.resources[nodeType.resource] += mineAmount;
+        node.remainingYield -= mineAmount;
+        
+        gameState.achievements.stats.totalResourcesEarned += mineAmount;
+        
+        // Remove depleted nodes
+        if (node.remainingYield <= 0) {
+            nodes.splice(i, 1);
+            showNotification(`Resource node depleted: ${nodeType.name}`, 'info');
+        }
+    }
+}
+
+function discoverResourceNode() {
+    // Random discovery when exploring
+    for (const [key, nodeType] of Object.entries(resourceNodeTypes)) {
+        if (Math.random() < nodeType.discoveryChance * 0.1) { // 10% of normal chance per exploration
+            const node = {
+                type: key,
+                remainingYield: nodeType.totalYield,
+                discoveredAt: Date.now()
+            };
+            gameState.exploration.resourceNodes.push(node);
+            showNotification(`Discovered: ${nodeType.name}!`, 'discovery');
+            break;
+        }
+    }
+}
+
+function updateResourceNodesDisplay() {
+    const nodesDisplay = document.getElementById('resource-nodes-display');
+    if (!nodesDisplay) return;
+    
+    nodesDisplay.innerHTML = '';
+    
+    if (gameState.exploration.resourceNodes.length === 0) {
+        nodesDisplay.innerHTML = '<p>No active resource nodes. Explore to discover them!</p>';
+        return;
+    }
+    
+    gameState.exploration.resourceNodes.forEach(node => {
+        const nodeType = resourceNodeTypes[node.type];
+        const progress = ((nodeType.totalYield - node.remainingYield) / nodeType.totalYield * 100).toFixed(1);
+        
+        const div = document.createElement('div');
+        div.className = 'resource-node';
+        div.innerHTML = `
+            <h4>${nodeType.name}</h4>
+            <p>${nodeType.description}</p>
+            <p>Remaining: ${Math.floor(node.remainingYield)} ${nodeType.resource}</p>
+            <p>Mining Rate: ${nodeType.miningRate}/s</p>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: ${progress}%"></div>
+            </div>
+        `;
+        
+        nodesDisplay.appendChild(div);
+    });
+}
+
+// Helper function for notifications
+function showNotification(message, type = 'info') {
+    if (!gameSettings.showNotifications) return;
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Apply special building effects
+function applyBuildingEffects(deltaTime) {
+    // Refinery: Auto-convert resources
+    if (gameState.buildings.refinery > 0) {
+        const refinery = buildings.refinery;
+        const convertAmount = refinery.refinesPerSecond * gameState.buildings.refinery * deltaTime;
+        if (gameState.resources.metal >= convertAmount * 2) {
+            gameState.resources.metal -= convertAmount * 2;
+            gameState.resources.energy += convertAmount;
+        }
+    }
+    
+    // Factory: Auto-produce ships
+    if (gameState.buildings.factory > 0) {
+        if (!gameState.factoryTimer) gameState.factoryTimer = 0;
+        gameState.factoryTimer += deltaTime;
+        
+        const factory = buildings.factory;
+        if (gameState.factoryTimer >= factory.autoProduceInterval) {
+            const shipsToMake = Math.floor(gameState.factoryTimer / factory.autoProduceInterval);
+            gameState.ships[factory.autoProduceShip] += shipsToMake * gameState.buildings.factory;
+            gameState.factoryTimer %= factory.autoProduceInterval;
+            gameState.achievements.stats.totalShipsBuilt += shipsToMake * gameState.buildings.factory;
+        }
+    }
+    
+    // Bank: Generate interest
+    if (gameState.buildings.bank > 0) {
+        const bank = buildings.bank;
+        const interestPerSecond = bank.interestRate / 60; // Convert per-minute to per-second
+        const interest = gameState.resources.credits * interestPerSecond * gameState.buildings.bank * deltaTime;
+        gameState.resources.credits += interest;
+    }
+    
+    // Mining Ships: Passive resource collection
+    if (gameState.ships.miningShip > 0) {
+        const miningShip = ships.miningShip;
+        for (const [resource, amount] of Object.entries(miningShip.miningBonus)) {
+            gameState.resources[resource] += amount * gameState.ships.miningShip * deltaTime;
+        }
+    }
 }
 
 // Game loop
@@ -1229,6 +2039,15 @@ function gameLoop() {
     
     // Check expeditions
     checkExpeditions();
+    
+    // Update resource nodes
+    updateResourceNodes(deltaTime * gameSettings.gameSpeed);
+    
+    // Apply special building effects
+    applyBuildingEffects(deltaTime * gameSettings.gameSpeed);
+    
+    // Check achievements
+    checkAchievements();
     
     // Auto-combat if enabled
     if (gameSettings.autoCombatEnabled) {
