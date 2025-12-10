@@ -171,6 +171,39 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Statistics Dashboard -->
+            <section class="panel statistics-panel">
+                <h2>📊 Statistics Dashboard</h2>
+                <div class="statistics-content">
+                    <div class="stats-dashboard" id="stats-dashboard"></div>
+                    <div class="chart-container">
+                        <h3>Resource Production Over Time</h3>
+                        <div id="production-chart" class="simple-chart"></div>
+                        <div id="chart-labels" class="chart-labels"></div>
+                    </div>
+                    <div style="margin-top: 15px; text-align: center;">
+                        <button onclick="exportStatistics()" class="control-btn">📥 Export Statistics (JSON)</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Challenges Section -->
+            <section class="panel challenges-panel">
+                <h2>🎯 Challenges</h2>
+                <div class="challenges-content">
+                    <p style="margin-bottom: 15px; color: #a8dadc;">Complete special challenges for unique rewards!</p>
+                    <div id="challenges-list"></div>
+                </div>
+            </section>
+
+            <!-- Story Mode Section -->
+            <section class="panel story-panel-section">
+                <h2>📖 Story Mode</h2>
+                <div id="story-content" class="story-content">
+                    <p style="color: #a8dadc;">The story of your galactic empire will unfold here...</p>
+                </div>
+            </section>
         </div>
 
         <footer>
@@ -252,6 +285,40 @@
                         <input type="checkbox" id="setting-offline-progress" 
                                onchange="applySetting('offlineProgressEnabled', this.checked)">
                         Offline Progress (max 4 hours)
+                    </label>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>Theme</h3>
+                    <label>
+                        Select Color Theme:
+                        <select id="setting-theme" onchange="changeTheme(this.value)" style="margin-left: 10px; padding: 5px; background: rgba(0,0,0,0.3); color: #e4e4e4; border: 1px solid #00d9ff; border-radius: 5px;">
+                            <option value="dark">Dark (Default)</option>
+                            <option value="light">Light</option>
+                            <option value="classic">Classic Purple</option>
+                            <option value="green">Matrix Green</option>
+                        </select>
+                    </label>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>Audio</h3>
+                    <label>
+                        <input type="checkbox" id="setting-sound-effects" 
+                               onchange="applySetting('soundEffectsEnabled', this.checked)">
+                        Sound Effects
+                    </label>
+                    <label>
+                        <input type="checkbox" id="setting-music" 
+                               onchange="applySetting('musicEnabled', this.checked)">
+                        Background Music
+                    </label>
+                    <label>
+                        Master Volume:
+                        <input type="range" id="setting-volume" min="0" max="100" value="50"
+                               onchange="applySetting('masterVolume', parseInt(this.value))"
+                               style="margin-left: 10px; width: 150px;">
+                        <span id="volume-display">50%</span>
                     </label>
                 </div>
                 
