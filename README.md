@@ -72,9 +72,11 @@ Build 6 different ship types:
 - **Battleship**: Ultimate war machine
 
 ### Enhanced Combat System
-- **9 Enemy Types**: Including 4 powerful boss enemies
-  - Regular Enemies: Space Pirates, Rogue Drones, Rebel Fleet, Alien Raiders, Dark Empire Scout
-  - Boss Enemies: Void Leviathan, Ancient Guardian, Void Titan, Cosmic Devourer
+- **13 Enemy Types**: Including normal, elite, and boss enemies
+  - **Normal Enemies**: Space Pirates, Rogue Drones, Rebel Fleet, Alien Raiders, Dark Empire Scout
+  - **Elite Enemies**: Mercenary Squadron, Crystalline Horde, Quantum Swarm, Temporal Raiders
+  - **Boss Enemies**: Void Leviathan, Ancient Guardian, Void Titan, Cosmic Devourer
+- **Enemy Abilities**: Each enemy has unique abilities like Regeneration, Energy Drain, Stealth Cloak, Time Dilation, and more
 - **Enemy Waves**: Enable periodic attacks that must be defended against
 - **Auto-Combat**: Automatically engage enemies when your fleet is strong enough
 - **Combat Rewards**: Gain resources and research points from victories
@@ -104,6 +106,47 @@ Reset your progress for permanent bonuses!
 - **Expeditions**: Send your fleet on timed missions for rewards
 
 ### Game Settings
+- **Auto-Save Control**: Adjustable interval or disable/enable
+- **Game Speed**: Pause, Slow (0.5x), Normal (1x), Fast (2x)
+- **Notification Preferences**: Toggle alerts
+- **Display Options**: Show/hide resource rates and tooltips
+- **Confirmation Dialogs**: Optional confirmations for resets and bulk actions
+- **Offline Progress**: Earn resources while away (max 4 hours)
+- **Theme Selection**: Choose from Dark, Light, Classic Purple, or Matrix Green themes
+- **Audio Settings**: Enable/disable sound effects and music with volume control
+
+### 📊 Statistics Dashboard
+Track your galactic empire's progress with comprehensive statistics:
+- Total resources, buildings, and ships
+- Fleet power and enemies defeated
+- Sectors explored and technologies researched
+- Play time tracking
+- Production history over time
+- Export statistics as JSON
+
+### 🎯 Challenge System
+Complete special challenges for unique rewards:
+- **Speed Runner**: Defeat 50 enemies in 10 minutes
+- **Peaceful Expansion**: Reach 50,000 resources without combat
+- **Research Rush**: Complete 10 research projects in 15 minutes
+- **Construction Frenzy**: Build 100 total buildings
+- **Galactic Cartographer**: Explore 15 sectors in 20 minutes
+- **Fleet Commander**: Build 200 total ships
+- **Boss Hunter**: Defeat 5 boss enemies
+- **Minimalist**: Defeat Void Leviathan with less than 10 buildings
+
+Each challenge has different difficulty levels and rewards including Dark Matter!
+
+### 📖 Story Mode
+Experience the narrative journey of your galactic empire:
+- **The Beginning**: Your civilization's first steps into space
+- **First Contact**: Encounter with alien species
+- **The Ancient Ruins**: Discover lost civilizations
+- **The Void Awakens**: Face the ultimate challenge
+
+Make choices that affect your empire's development and unlock new chapters as you progress!
+
+### Enhanced Combat System
 - **Auto-Save Control**: Adjustable interval or disable/enable
 - **Game Speed**: Pause, Slow (0.5x), Normal (1x), Fast (2x)
 - **Notification Preferences**: Toggle alerts
@@ -159,13 +202,22 @@ Reset your progress for permanent bonuses!
 
 ## 🔮 Future Plans
 
-See [suggestions.md](suggestions.md) for detailed future development ideas. Many high-priority features have been implemented:
+See [suggestions.md](suggestions.md) for detailed future development ideas. Many high-priority and lower-priority features have been implemented:
 - ✅ Prestige system with Dark Matter
 - ✅ Advanced technologies with tiers and specializations
 - ✅ Enhanced combat with boss enemies and waves
 - ✅ Exploration system with sectors and expeditions
 - ✅ Quality of Life improvements (resource caps, bulk actions, offline progress)
 - ✅ Game settings and keyboard shortcuts
+- ✅ Achievements system
+- ✅ Resource management (conversion, trading, nodes)
+- ✅ **NEW: Statistics Dashboard** - Track your progress with detailed metrics
+- ✅ **NEW: Challenge System** - Complete special challenges for unique rewards
+- ✅ **NEW: Story Mode** - Experience a narrative campaign through your empire's journey
+- ✅ **NEW: Theme Options** - Choose from 4 different visual themes
+- ✅ **NEW: Enhanced Enemies** - Fight against 13 diverse enemy types with unique abilities
+- ✅ **NEW: Tooltips** - Hover over items for detailed information
+- ✅ **NEW: Audio Settings** - Framework for sound effects and music
 
 ## 🤝 Contributing
 

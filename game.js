@@ -1605,8 +1605,26 @@ function updateUI() {
         const cost = getBuildingCost(key);
         const canBuild = canAfford(cost) && meetsRequirements(building.requires);
         
+        // Build tooltip text
+        let tooltipText = building.description;
+        if (building.produces && Object.keys(building.produces).length > 0) {
+            tooltipText += `\n\nProduces: ${Object.entries(building.produces).map(([r, a]) => `${a} ${r}/s`).join(', ')}`;
+        }
+        if (building.capBonus) {
+            tooltipText += `\n\nIncreases all resource caps by ${building.capBonus}`;
+        }
+        if (building.defensePower) {
+            tooltipText += `\n\nDefense Power: ${building.defensePower}`;
+        }
+        if (building.refinesPerSecond) {
+            tooltipText += `\n\nConverts ${building.refinesPerSecond * 2} metal → ${building.refinesPerSecond} energy per second`;
+        }
+        if (building.productionBonus) {
+            tooltipText += `\n\nBoosts all production by ${building.productionBonus * 100}%`;
+        }
+        
         const div = document.createElement('div');
-        div.className = 'building-item';
+        div.className = 'building-item tooltip';
         div.innerHTML = `
             <h3>${building.name}</h3>
             <p>${building.description}</p>
@@ -1617,6 +1635,7 @@ function updateUI() {
                 <button onclick="bulkBuildBuilding('${key}', 10)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x10</button>
                 <button onclick="bulkBuildBuilding('${key}', 100)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x100</button>
             </div>
+            ${gameSettings.showTooltips ? `<span class="tooltiptext">${tooltipText.replace(/\n/g, '<br>')}</span>` : ''}
         `;
         buildingsList.appendChild(div);
     }
@@ -1629,12 +1648,13 @@ function updateUI() {
         if (gameState.research[key]) {
             const div = document.createElement('div');
             const category = tech.category ? ` tech-${tech.category}` : '';
-            div.className = `research-item researched${category}`;
+            div.className = `research-item researched${category} tooltip`;
             div.innerHTML = `
                 <h3>${tech.name}</h3>
                 ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
                 <p>${tech.description}</p>
                 <p>✓ Researched</p>
+                ${gameSettings.showTooltips ? `<span class="tooltiptext">Unlocked: ${tech.description}</span>` : ''}
             `;
             researchList.appendChild(div);
         } else if (meetsRequirements(tech.requires)) {
@@ -1656,13 +1676,17 @@ function updateUI() {
             const canResearch = canAfford(displayCost);
             const div = document.createElement('div');
             const category = tech.category ? ` tech-${tech.category}` : '';
-            div.className = `research-item${category}`;
+            
+            let tooltipText = `${tech.description}\n\nRequires: ${tech.requires || 'None'}`;
+            
+            div.className = `research-item${category} tooltip`;
             div.innerHTML = `
                 <h3>${tech.name}</h3>
                 ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
                 <p>${tech.description}</p>
                 <p>Cost: ${Object.entries(displayCost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
                 <button onclick="researchTech('${key}')" ${!canResearch ? 'disabled' : ''}>Research</button>
+                ${gameSettings.showTooltips ? `<span class="tooltiptext">${tooltipText.replace(/\n/g, '<br>')}</span>` : ''}
             `;
             researchList.appendChild(div);
         }
@@ -1676,8 +1700,16 @@ function updateUI() {
         if (!meetsRequirements(ship.requires)) continue;
         
         const canBuild = canAfford(ship.cost) && gameState.buildings.shipyard > 0;
+        
+        let tooltipText = `${ship.description}\n\nPower: ${ship.power}`;
+        if (ship.supportBonus) tooltipText += `\n\nSupport Bonus: +${ship.supportBonus * 100}% fleet effectiveness`;
+        if (ship.carrierBonus) tooltipText += `\n\nCarrier Bonus: +${ship.carrierBonus} virtual fighters`;
+        if (ship.miningBonus) {
+            tooltipText += `\n\nMining: ${Object.entries(ship.miningBonus).map(([r, a]) => `${a} ${r}/s`).join(', ')}`;
+        }
+        
         const div = document.createElement('div');
-        div.className = 'ship-item';
+        div.className = 'ship-item tooltip';
         div.innerHTML = `
             <h3>${ship.name}</h3>
             <p>${ship.description}</p>
@@ -1688,6 +1720,7 @@ function updateUI() {
                 <button onclick="bulkBuildShip('${key}', 10)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x10</button>
                 <button onclick="bulkBuildShip('${key}', 100)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x100</button>
             </div>
+            ${gameSettings.showTooltips ? `<span class="tooltiptext">${tooltipText.replace(/\n/g, '<br>')}</span>` : ''}
         `;
         shipsList.appendChild(div);
     }
