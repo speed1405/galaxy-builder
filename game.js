@@ -179,6 +179,17 @@ const gameState = {
         choicesMade: [],
         unlockedChapters: [0]
     },
+    seasonalEvents: {
+        active: null,
+        completed: [],
+        nextEventTime: 0
+    },
+    galaxy: {
+        seed: Math.floor(Math.random() * 1000000),
+        generated: false,
+        size: 'medium',
+        density: 'normal'
+    },
     lastUpdate: Date.now()
 };
 
@@ -1010,6 +1021,69 @@ const storyChapters = [
 ];
 
 
+// Seasonal Events Definitions
+const seasonalEvents = {
+    solarFlare: {
+        name: 'Solar Flare',
+        description: 'Intense solar activity increases energy production by 50% for 5 minutes',
+        duration: 300, // seconds
+        effect: { energyBonus: 0.5 },
+        rarity: 'common'
+    },
+    meteorShower: {
+        name: 'Meteor Shower',
+        description: 'Rich meteors provide bonus metal production (+100%) for 5 minutes',
+        duration: 300,
+        effect: { metalBonus: 1.0 },
+        rarity: 'common'
+    },
+    galacticBazaar: {
+        name: 'Galactic Bazaar',
+        description: 'Traders arrive offering better rates (all trades 50% cheaper) for 10 minutes',
+        duration: 600,
+        effect: { tradeBonus: 0.5 },
+        rarity: 'uncommon'
+    },
+    ancientBeacon: {
+        name: 'Ancient Beacon',
+        description: 'Discovered beacon doubles research production for 5 minutes',
+        duration: 300,
+        effect: { researchBonus: 1.0 },
+        rarity: 'uncommon'
+    },
+    cosmicAlignment: {
+        name: 'Cosmic Alignment',
+        description: 'Rare planetary alignment boosts ALL production by 100% for 3 minutes',
+        duration: 180,
+        effect: { allBonus: 1.0 },
+        rarity: 'rare'
+    },
+    darkMatterStorm: {
+        name: 'Dark Matter Storm',
+        description: 'Cosmic storm grants +5 Dark Matter immediately!',
+        duration: 0,
+        effect: { darkMatter: 5 },
+        rarity: 'rare'
+    },
+    peaceAccord: {
+        name: 'Peace Accord',
+        description: 'Temporary peace treaty: no enemy attacks for 10 minutes',
+        duration: 600,
+        effect: { noAttacks: true },
+        rarity: 'uncommon'
+    }
+};
+
+// Galaxy Generation Parameters
+const galaxyTemplates = {
+    tiny: { sectors: 20, resourceMultiplier: 0.8, enemyDensity: 0.5 },
+    small: { sectors: 50, resourceMultiplier: 0.9, enemyDensity: 0.7 },
+    medium: { sectors: 100, resourceMultiplier: 1.0, enemyDensity: 1.0 },
+    large: { sectors: 200, resourceMultiplier: 1.1, enemyDensity: 1.2 },
+    huge: { sectors: 500, resourceMultiplier: 1.2, enemyDensity: 1.5 }
+};
+
+
 // Calculate building cost with scaling
 function getBuildingCost(buildingKey) {
     const building = buildings[buildingKey];
@@ -1109,6 +1183,9 @@ function calculateProduction() {
     if (researchBoostLevel > 0) {
         production.research *= 1 + (researchBoostLevel * 0.15);
     }
+    
+    // Apply seasonal event bonuses
+    production = applySeasonalBonuses(production);
     
     return production;
 }
@@ -1882,6 +1959,32 @@ function updateUI() {
     updateStatisticsDashboard();
     updateChallengesDisplay();
     updateStoryDisplay();
+    updateSeasonalEventDisplay();
+}
+
+function updateSeasonalEventDisplay() {
+    const panel = document.getElementById('seasonal-events-panel');
+    const display = document.getElementById('seasonal-event-display');
+    
+    if (!panel || !display) return;
+    
+    const eventInfo = displaySeasonalEvent();
+    
+    if (eventInfo) {
+        panel.style.display = 'block';
+        const minutes = Math.floor(eventInfo.timeRemaining / 60);
+        const seconds = eventInfo.timeRemaining % 60;
+        
+        display.innerHTML = `
+            <div style="background: rgba(255, 193, 7, 0.2); padding: 15px; border-radius: 8px; border: 2px solid #ffc107;">
+                <h3 style="color: #ffc107; margin-bottom: 10px;">🎉 ${eventInfo.name}</h3>
+                <p style="color: #a8dadc; margin-bottom: 10px;">${eventInfo.description}</p>
+                <p style="color: #ffd700; font-weight: bold;">⏱️ Time Remaining: ${minutes}m ${seconds}s</p>
+            </div>
+        `;
+    } else {
+        panel.style.display = 'none';
+    }
 }
 
 // Achievement System Functions
@@ -2581,6 +2684,153 @@ function makeStoryChoice(choiceIndex) {
     updateUI();
 }
 
+// Seasonal Events Functions
+function checkSeasonalEvent() {
+    const now = Date.now();
+    
+    // Check if an event should spawn (every 10-20 minutes)
+    if (!gameState.seasonalEvents.nextEventTime) {
+        gameState.seasonalEvents.nextEventTime = now + (600000 + Math.random() * 600000); // 10-20 min
+        return;
+    }
+    
+    // Check if active event expired
+    if (gameState.seasonalEvents.active) {
+        const event = seasonalEvents[gameState.seasonalEvents.active.key];
+        const elapsed = (now - gameState.seasonalEvents.active.startTime) / 1000;
+        
+        if (elapsed >= event.duration) {
+            showNotification(`Event ended: ${event.name}`, 'info');
+            gameState.seasonalEvents.active = null;
+        }
+        return;
+    }
+    
+    // Spawn new event
+    if (now >= gameState.seasonalEvents.nextEventTime) {
+        const eventKeys = Object.keys(seasonalEvents);
+        const weights = eventKeys.map(key => {
+            const rarity = seasonalEvents[key].rarity;
+            if (rarity === 'common') return 50;
+            if (rarity === 'uncommon') return 30;
+            if (rarity === 'rare') return 10;
+            return 5;
+        });
+        
+        // Weighted random selection
+        const totalWeight = weights.reduce((a, b) => a + b, 0);
+        let random = Math.random() * totalWeight;
+        let selectedIndex = 0;
+        
+        for (let i = 0; i < weights.length; i++) {
+            random -= weights[i];
+            if (random <= 0) {
+                selectedIndex = i;
+                break;
+            }
+        }
+        
+        const eventKey = eventKeys[selectedIndex];
+        const event = seasonalEvents[eventKey];
+        
+        // Apply instant effects
+        if (event.effect.darkMatter) {
+            gameState.prestige.darkMatter += event.effect.darkMatter;
+        }
+        
+        // Start timed event
+        if (event.duration > 0) {
+            gameState.seasonalEvents.active = {
+                key: eventKey,
+                startTime: now
+            };
+        }
+        
+        showNotification(`🎉 SEASONAL EVENT: ${event.name}! ${event.description}`, 'achievement');
+        gameState.seasonalEvents.nextEventTime = now + (600000 + Math.random() * 600000);
+    }
+}
+
+function applySeasonalBonuses(production) {
+    if (!gameState.seasonalEvents.active) return production;
+    
+    const event = seasonalEvents[gameState.seasonalEvents.active.key];
+    const effect = event.effect;
+    
+    if (effect.metalBonus) production.metal *= (1 + effect.metalBonus);
+    if (effect.energyBonus) production.energy *= (1 + effect.energyBonus);
+    if (effect.researchBonus) production.research *= (1 + effect.researchBonus);
+    if (effect.allBonus) {
+        production.metal *= (1 + effect.allBonus);
+        production.energy *= (1 + effect.allBonus);
+        production.research *= (1 + effect.allBonus);
+        production.credits *= (1 + effect.allBonus);
+    }
+    
+    return production;
+}
+
+// Galaxy Generation Functions
+function generateGalaxy(size = 'medium') {
+    const template = galaxyTemplates[size];
+    if (!template) return;
+    
+    gameState.galaxy.size = size;
+    gameState.galaxy.generated = true;
+    
+    // Generate procedural sectors based on seed
+    const sectors = [];
+    for (let i = 0; i < template.sectors; i++) {
+        const sectorSeed = gameState.galaxy.seed + i;
+        const random = seededRandom(sectorSeed);
+        
+        // Determine sector type
+        const typeRoll = random();
+        let type;
+        if (typeRoll < 0.3) type = sectorTypes[0]; // Asteroid Field
+        else if (typeRoll < 0.6) type = sectorTypes[1]; // Nebula
+        else if (typeRoll < 0.85) type = sectorTypes[2]; // Ancient Ruins
+        else type = sectorTypes[3]; // Trade Hub
+        
+        sectors.push({
+            id: i,
+            name: `${type.name} Sector-${i}`,
+            type: type.name,
+            bonus: type.bonus,
+            multiplier: type.multiplier * template.resourceMultiplier,
+            enemyChance: random() * template.enemyDensity,
+            discovered: false
+        });
+    }
+    
+    showNotification(`Galaxy generated! ${template.sectors} sectors await discovery.`, 'discovery');
+    return sectors;
+}
+
+// Simple seeded random number generator
+function seededRandom(seed) {
+    let state = seed;
+    return function() {
+        state = (state * 9301 + 49297) % 233280;
+        return state / 233280;
+    };
+}
+
+function displaySeasonalEvent() {
+    // Could add a UI element to show active seasonal events
+    if (!gameState.seasonalEvents.active) return null;
+    
+    const event = seasonalEvents[gameState.seasonalEvents.active.key];
+    const elapsed = Math.floor((Date.now() - gameState.seasonalEvents.active.startTime) / 1000);
+    const remaining = Math.max(0, event.duration - elapsed);
+    
+    return {
+        name: event.name,
+        description: event.description,
+        timeRemaining: remaining
+    };
+}
+
 // Apply special building effects
 function applyBuildingEffects(deltaTime) {
     // Refinery: Auto-convert resources
@@ -2706,6 +2956,9 @@ function gameLoop() {
     
     // Check challenge progress
     checkChallengeProgress();
+    
+    // Check for seasonal events
+    checkSeasonalEvent();
     
     updateUI();
 }
