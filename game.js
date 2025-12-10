@@ -1164,7 +1164,7 @@ const storyChapters = [
                 ]
             },
             {
-                text: 'In the final moment, you discover the truth: the Void Ones were never evil. They are the universe\'s immune system, responding to a corruption introduced by the ancient civilization\'s experiments. By understanding this, you broker peace—a new balance between order and chaos, light and void.',
+                text: "In the final moment, you discover the truth: the Void Ones were never evil. They are the universe's immune system, responding to a corruption introduced by the ancient civilization's experiments. By understanding this, you broker peace—a new balance between order and chaos, light and void.",
                 choices: [
                     { text: 'Embrace the new balance', nextScene: 4 }
                 ]
