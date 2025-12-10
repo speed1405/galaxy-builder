@@ -1361,28 +1361,51 @@ const galaxyTemplates = {
 };
 
 
+// Default credit cost for first building if not specified
+const DEFAULT_FIRST_BUILDING_COST = 10;
+
+// Apply cost reduction bonuses (prestige and research)
+function applyCostReductions(baseCost) {
+    let finalCost = baseCost;
+    
+    // Apply prestige cost reduction
+    const costReductionLevel = gameState.prestige.upgrades.costReduction;
+    if (costReductionLevel > 0) {
+        const reduction = 1 - (costReductionLevel * 0.05);
+        finalCost = Math.floor(finalCost * reduction);
+    }
+    
+    // Apply universal constructor
+    if (gameState.research.universalConstructor) {
+        finalCost = Math.floor(finalCost * 0.5);
+    }
+    
+    return finalCost;
+}
+
 // Calculate building cost with scaling
 function getBuildingCost(buildingKey) {
     const building = buildings[buildingKey];
     const count = gameState.buildings[buildingKey];
     const cost = {};
     
+    // Safety check
+    if (!building || !building.baseCost) {
+        console.error(`Invalid building or missing baseCost: ${buildingKey}`);
+        return { credits: DEFAULT_FIRST_BUILDING_COST };
+    }
+    
+    // First building of each type costs credits only
+    if (count === 0) {
+        const creditCost = building.baseCost.credits || DEFAULT_FIRST_BUILDING_COST;
+        cost.credits = applyCostReductions(creditCost);
+        return cost;
+    }
+    
+    // Subsequent buildings use normal scaling
     for (const [resource, amount] of Object.entries(building.baseCost)) {
-        let finalCost = Math.floor(amount * Math.pow(building.costMultiplier, count));
-        
-        // Apply prestige cost reduction
-        const costReductionLevel = gameState.prestige.upgrades.costReduction;
-        if (costReductionLevel > 0) {
-            const reduction = 1 - (costReductionLevel * 0.05);
-            finalCost = Math.floor(finalCost * reduction);
-        }
-        
-        // Apply universal constructor
-        if (gameState.research.universalConstructor) {
-            finalCost = Math.floor(finalCost * 0.5);
-        }
-        
-        cost[resource] = finalCost;
+        const scaledCost = Math.floor(amount * Math.pow(building.costMultiplier, count));
+        cost[resource] = applyCostReductions(scaledCost);
     }
     
     return cost;
