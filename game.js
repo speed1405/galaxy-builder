@@ -64,7 +64,22 @@ const gameState = {
         warpDrive: false,
         advancedWeaponry: false,
         nanoTechnology: false,
-        quantumPhysics: false
+        quantumPhysics: false,
+        // Military Specialization
+        plasmaCannonsII: false,
+        plasmaCannonsIII: false,
+        tacticalSystems: false,
+        // Economy Specialization
+        advancedMining: false,
+        fusionPower: false,
+        galacticTrade: false,
+        // Science Specialization
+        researchNetwork: false,
+        quantumComputing: false,
+        // Mega-Projects
+        dysonSphere: false,
+        galaxyNetwork: false,
+        universalConstructor: false
     },
     ships: {
         scout: 0,
@@ -199,6 +214,87 @@ const research = {
         description: 'Ultimate technology - all bonuses doubled',
         cost: { research: 500 },
         requires: 'warpDrive'
+    },
+    // Military Specialization
+    plasmaCannonsII: {
+        name: 'Plasma Cannons II',
+        description: 'Advanced plasma technology (+40% attack)',
+        cost: { research: 200 },
+        requires: 'plasmaCannons',
+        category: 'military'
+    },
+    plasmaCannonsIII: {
+        name: 'Plasma Cannons III',
+        description: 'Ultimate plasma weapons (+60% attack)',
+        cost: { research: 400 },
+        requires: 'plasmaCannonsII',
+        category: 'military'
+    },
+    tacticalSystems: {
+        name: 'Tactical Systems',
+        description: 'Advanced combat formations (+25% fleet power)',
+        cost: { research: 250 },
+        requires: 'advancedWeaponry',
+        category: 'military'
+    },
+    // Economy Specialization
+    advancedMining: {
+        name: 'Advanced Mining',
+        description: 'Improve metal production by 50%',
+        cost: { research: 180 },
+        requires: 'advancedMaterials',
+        category: 'economy'
+    },
+    fusionPower: {
+        name: 'Fusion Power',
+        description: 'Improve energy production by 75%',
+        cost: { research: 220 },
+        requires: 'energyEfficiency',
+        category: 'economy'
+    },
+    galacticTrade: {
+        name: 'Galactic Trade',
+        description: 'Improve credit production by 100%',
+        cost: { research: 300 },
+        requires: 'warpDrive',
+        category: 'economy'
+    },
+    // Science Specialization
+    researchNetwork: {
+        name: 'Research Network',
+        description: 'Link labs for +50% research',
+        cost: { research: 150 },
+        requires: 'basicEngineering',
+        category: 'science'
+    },
+    quantumComputing: {
+        name: 'Quantum Computing',
+        description: 'Process data faster (+75% research)',
+        cost: { research: 350 },
+        requires: 'quantumPhysics',
+        category: 'science'
+    },
+    // Mega-Projects
+    dysonSphere: {
+        name: 'Dyson Sphere',
+        description: 'Harness star energy (massive energy boost)',
+        cost: { research: 1000, metal: 10000, energy: 5000, credits: 10000 },
+        requires: 'fusionPower',
+        category: 'megaproject'
+    },
+    galaxyNetwork: {
+        name: 'Galaxy Network',
+        description: 'Interconnect all systems (all production +200%)',
+        cost: { research: 2000, metal: 20000, energy: 15000, credits: 25000 },
+        requires: 'galacticTrade',
+        category: 'megaproject'
+    },
+    universalConstructor: {
+        name: 'Universal Constructor',
+        description: 'Self-replicating factories (all costs -50%)',
+        cost: { research: 1500, metal: 15000, energy: 10000, credits: 20000 },
+        requires: 'nanoTechnology',
+        category: 'megaproject'
     }
 };
 
@@ -324,6 +420,11 @@ function getBuildingCost(buildingKey) {
             finalCost = Math.floor(finalCost * reduction);
         }
         
+        // Apply universal constructor
+        if (gameState.research.universalConstructor) {
+            finalCost = Math.floor(finalCost * 0.5);
+        }
+        
         cost[resource] = finalCost;
     }
     
@@ -364,6 +465,22 @@ function calculateProduction() {
         }
     }
     
+    // Apply research bonuses
+    if (gameState.research.advancedMining) production.metal *= 1.5;
+    if (gameState.research.fusionPower) production.energy *= 1.75;
+    if (gameState.research.galacticTrade) production.credits *= 2;
+    if (gameState.research.researchNetwork) production.research *= 1.5;
+    if (gameState.research.quantumComputing) production.research *= 1.75;
+    
+    // Apply mega-project bonuses
+    if (gameState.research.dysonSphere) production.energy *= 5;
+    if (gameState.research.galaxyNetwork) {
+        production.metal *= 3;
+        production.energy *= 3;
+        production.research *= 3;
+        production.credits *= 3;
+    }
+    
     // Apply prestige bonuses
     const prodBoostLevel = gameState.prestige.upgrades.productionBoost;
     if (prodBoostLevel > 0) {
@@ -393,8 +510,11 @@ function calculateFleetPower() {
     // Apply research bonuses
     if (gameState.research.advancedMaterials) power *= 1.2;
     if (gameState.research.plasmaCannons) power *= 1.3;
+    if (gameState.research.plasmaCannonsII) power *= 1.4;
+    if (gameState.research.plasmaCannonsIII) power *= 1.6;
     if (gameState.research.shieldTech) power *= 1.5;
     if (gameState.research.advancedWeaponry) power *= 1.5;
+    if (gameState.research.tacticalSystems) power *= 1.25;
     if (gameState.research.quantumPhysics) power *= 2;
     
     // Apply prestige combat power bonus
@@ -443,6 +563,9 @@ function researchTech(techKey) {
             const reduction = 1 - (costReductionLevel * 0.05);
             finalCost = Math.floor(finalCost * reduction);
         }
+        if (gameState.research.universalConstructor && techKey !== 'universalConstructor') {
+            finalCost = Math.floor(finalCost * 0.5);
+        }
         cost[resource] = finalCost;
     }
     
@@ -476,6 +599,9 @@ function buildShip(shipKey) {
         if (costReductionLevel > 0) {
             const reduction = 1 - (costReductionLevel * 0.05);
             finalCost = Math.floor(finalCost * reduction);
+        }
+        if (gameState.research.universalConstructor) {
+            finalCost = Math.floor(finalCost * 0.5);
         }
         cost[resource] = finalCost;
     }
@@ -583,21 +709,40 @@ function updateUI() {
     for (const [key, tech] of Object.entries(research)) {
         if (gameState.research[key]) {
             const div = document.createElement('div');
-            div.className = 'research-item researched';
+            const category = tech.category ? ` tech-${tech.category}` : '';
+            div.className = `research-item researched${category}`;
             div.innerHTML = `
                 <h3>${tech.name}</h3>
+                ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
                 <p>${tech.description}</p>
                 <p>✓ Researched</p>
             `;
             researchList.appendChild(div);
         } else if (meetsRequirements(tech.requires)) {
-            const canResearch = canAfford(tech.cost);
+            // Apply cost reduction for display
+            const displayCost = {};
+            for (const [resource, amount] of Object.entries(tech.cost)) {
+                let finalCost = amount;
+                const costReductionLevel = gameState.prestige.upgrades.costReduction;
+                if (costReductionLevel > 0) {
+                    const reduction = 1 - (costReductionLevel * 0.05);
+                    finalCost = Math.floor(finalCost * reduction);
+                }
+                if (gameState.research.universalConstructor && key !== 'universalConstructor') {
+                    finalCost = Math.floor(finalCost * 0.5);
+                }
+                displayCost[resource] = finalCost;
+            }
+            
+            const canResearch = canAfford(displayCost);
             const div = document.createElement('div');
-            div.className = 'research-item';
+            const category = tech.category ? ` tech-${tech.category}` : '';
+            div.className = `research-item${category}`;
             div.innerHTML = `
                 <h3>${tech.name}</h3>
+                ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
                 <p>${tech.description}</p>
-                <p>Cost: ${Object.entries(tech.cost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
+                <p>Cost: ${Object.entries(displayCost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
                 <button onclick="researchTech('${key}')" ${!canResearch ? 'disabled' : ''}>Research</button>
             `;
             researchList.appendChild(div);
