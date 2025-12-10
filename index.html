@@ -21,21 +21,25 @@
                     <div class="resource">
                         <span class="resource-name">Metal:</span>
                         <span id="metal" class="resource-value">0</span>
+                        <span class="resource-cap"> / <span id="metal-cap">10000</span></span>
                         <span class="resource-rate">(+<span id="metal-rate">0</span>/s)</span>
                     </div>
                     <div class="resource">
                         <span class="resource-name">Energy:</span>
                         <span id="energy" class="resource-value">0</span>
+                        <span class="resource-cap"> / <span id="energy-cap">10000</span></span>
                         <span class="resource-rate">(+<span id="energy-rate">0</span>/s)</span>
                     </div>
                     <div class="resource">
                         <span class="resource-name">Research:</span>
                         <span id="research" class="resource-value">0</span>
+                        <span class="resource-cap"> / <span id="research-cap">5000</span></span>
                         <span class="resource-rate">(+<span id="research-rate">0</span>/s)</span>
                     </div>
                     <div class="resource">
                         <span class="resource-name">Credits:</span>
                         <span id="credits" class="resource-value">100</span>
+                        <span class="resource-cap"> / <span id="credits-cap">20000</span></span>
                     </div>
                 </div>
             </section>
@@ -105,6 +109,27 @@
                     <div id="combat-log" class="combat-log">
                         <h3>Combat Log</h3>
                         <div id="log-messages"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Exploration Section -->
+            <section class="panel exploration-panel">
+                <h2>🔭 Exploration</h2>
+                <div class="exploration-content">
+                    <div class="exploration-info">
+                        <p>Sectors Explored: <span id="sectors-explored">0</span></p>
+                        <p>Active Expeditions: <span id="active-expeditions">0</span></p>
+                        <button onclick="exploreSector()" class="explore-btn">Explore New Sector</button>
+                        <button onclick="sendExpedition()" class="expedition-btn">Send Expedition</button>
+                    </div>
+                    <div class="sectors-list">
+                        <h3>Controlled Sectors</h3>
+                        <div id="sectors-display"></div>
+                    </div>
+                    <div class="expeditions-list">
+                        <h3>Expeditions</h3>
+                        <div id="expeditions-display"></div>
                     </div>
                 </div>
             </section>

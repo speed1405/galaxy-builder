@@ -47,12 +47,19 @@ const gameState = {
         research: 0,
         credits: 100
     },
+    resourceCaps: {
+        metal: 10000,
+        energy: 10000,
+        research: 5000,
+        credits: 20000
+    },
     buildings: {
         metalMine: 0,
         solarPanel: 0,
         researchLab: 0,
         shipyard: 0,
-        tradingPost: 0
+        tradingPost: 0,
+        warehouse: 0
     },
     research: {
         basicEngineering: false,
@@ -109,6 +116,17 @@ const gameState = {
             allTech: false
         }
     },
+    combat: {
+        nextWaveTime: 0,
+        waveNumber: 0,
+        waveEnabled: false
+    },
+    exploration: {
+        sectorsExplored: 0,
+        sectors: {},
+        nextExplorationTime: 0,
+        expeditions: []
+    },
     lastUpdate: Date.now()
 };
 
@@ -151,6 +169,14 @@ const buildings = {
         produces: { credits: 2 },
         costMultiplier: 1.25,
         requires: 'advancedMaterials'
+    },
+    warehouse: {
+        name: 'Warehouse',
+        description: 'Increases storage capacity for all resources',
+        baseCost: { metal: 100, credits: 200 },
+        produces: {},
+        costMultiplier: 1.5,
+        capBonus: 5000 // Increases all caps by 5000
     }
 };
 
@@ -346,13 +372,19 @@ const ships = {
 
 // Enemy Definitions
 const enemies = [
-    { name: 'Space Pirates', power: 20, reward: { metal: 50, energy: 30, credits: 100 } },
-    { name: 'Rogue Drones', power: 50, reward: { metal: 100, energy: 80, credits: 200 } },
-    { name: 'Rebel Fleet', power: 150, reward: { metal: 250, energy: 200, credits: 500 } },
-    { name: 'Alien Raiders', power: 300, reward: { metal: 500, energy: 400, credits: 1000 } },
-    { name: 'Dark Empire Scout', power: 600, reward: { metal: 1000, energy: 800, credits: 2000 } },
-    { name: 'Void Leviathan', power: 1200, reward: { metal: 2500, energy: 2000, credits: 5000 } },
-    { name: 'Ancient Guardian', power: 2500, reward: { metal: 5000, energy: 4000, credits: 10000 } }
+    { name: 'Space Pirates', power: 20, reward: { metal: 50, energy: 30, credits: 100 }, type: 'normal' },
+    { name: 'Rogue Drones', power: 50, reward: { metal: 100, energy: 80, credits: 200 }, type: 'normal' },
+    { name: 'Rebel Fleet', power: 150, reward: { metal: 250, energy: 200, credits: 500 }, type: 'normal' },
+    { name: 'Alien Raiders', power: 300, reward: { metal: 500, energy: 400, credits: 1000 }, type: 'normal' },
+    { name: 'Dark Empire Scout', power: 600, reward: { metal: 1000, energy: 800, credits: 2000 }, type: 'normal' },
+    { name: 'Void Leviathan', power: 1200, reward: { metal: 2500, energy: 2000, credits: 5000 }, type: 'boss', 
+      description: '⚔️ BOSS: Massive creature with regenerative abilities' },
+    { name: 'Ancient Guardian', power: 2500, reward: { metal: 5000, energy: 4000, credits: 10000 }, type: 'boss',
+      description: '⚔️ BOSS: Ancient protector with devastating weapons' },
+    { name: 'Void Titan', power: 5000, reward: { metal: 10000, energy: 8000, credits: 20000, research: 1000 }, type: 'boss',
+      description: '⚔️ BOSS: Colossal entity from the void between stars' },
+    { name: 'Cosmic Devourer', power: 10000, reward: { metal: 25000, energy: 20000, credits: 50000, research: 2500 }, type: 'boss',
+      description: '⚔️ BOSS: Ultimate threat consuming entire star systems' }
 ];
 
 // Prestige Upgrade Definitions
@@ -656,6 +688,219 @@ function addCombatLog(message, type = '') {
     }
 }
 
+// Enemy wave system
+function triggerEnemyWave() {
+    if (!gameState.combat.waveEnabled) return;
+    
+    const waveNumber = gameState.combat.waveNumber;
+    
+    // Generate enemy wave based on wave number
+    const enemyCount = Math.min(3 + Math.floor(waveNumber / 5), 10);
+    const enemyPower = 50 + (waveNumber * 20);
+    
+    const waveName = `Enemy Wave ${waveNumber + 1}`;
+    const waveEnemy = {
+        name: waveName,
+        power: enemyPower,
+        reward: {
+            metal: 100 + (waveNumber * 50),
+            energy: 80 + (waveNumber * 40),
+            credits: 200 + (waveNumber * 100)
+        },
+        type: 'wave'
+    };
+    
+    addCombatLog(`⚠️ ${waveName} incoming! Power: ${enemyPower}`, 'defeat');
+    
+    const fleetPower = calculateFleetPower();
+    
+    // Auto-defend if fleet is strong enough
+    if (fleetPower >= waveEnemy.power * 1.1) {
+        for (const [resource, amount] of Object.entries(waveEnemy.reward)) {
+            gameState.resources[resource] += amount;
+        }
+        addCombatLog(`✓ Successfully defended against ${waveName}!`, 'victory');
+        gameState.enemiesDefeated++;
+    } else if (fleetPower > 0) {
+        // Partial defense - some losses
+        const lossRate = Math.min(0.3, (waveEnemy.power - fleetPower) / waveEnemy.power);
+        for (const shipKey in gameState.ships) {
+            const losses = Math.ceil(gameState.ships[shipKey] * lossRate);
+            gameState.ships[shipKey] = Math.max(0, gameState.ships[shipKey] - losses);
+        }
+        addCombatLog(`⚠️ Heavy losses defending against ${waveName}! Lost ${Math.floor(lossRate * 100)}% of fleet.`, 'defeat');
+    } else {
+        // No fleet - lose resources
+        for (const resource in gameState.resources) {
+            gameState.resources[resource] = Math.max(0, gameState.resources[resource] * 0.9);
+        }
+        addCombatLog(`✗ Failed to defend against ${waveName}! Lost 10% of resources.`, 'defeat');
+    }
+    
+    gameState.combat.waveNumber++;
+    gameState.combat.nextWaveTime = Date.now() + (120000); // Next wave in 2 minutes
+    
+    updateUI();
+}
+
+// Toggle enemy waves
+function toggleEnemyWaves() {
+    gameState.combat.waveEnabled = !gameState.combat.waveEnabled;
+    
+    if (gameState.combat.waveEnabled) {
+        gameState.combat.nextWaveTime = Date.now() + 120000; // First wave in 2 minutes
+        gameState.combat.waveNumber = 0;
+        addCombatLog('Enemy waves enabled! Prepare for periodic attacks.', 'victory');
+    } else {
+        addCombatLog('Enemy waves disabled.', 'victory');
+    }
+    
+    updateUI();
+}
+
+// Exploration System
+const sectorTypes = [
+    { name: 'Asteroid Field', bonus: 'metal', multiplier: 1.5 },
+    { name: 'Nebula', bonus: 'energy', multiplier: 1.5 },
+    { name: 'Ancient Ruins', bonus: 'research', multiplier: 2 },
+    { name: 'Trade Hub', bonus: 'credits', multiplier: 2 }
+];
+
+const randomEvents = [
+    { name: 'Derelict Ship', reward: { metal: 500, credits: 1000 } },
+    { name: 'Resource Asteroid', reward: { metal: 1000, energy: 500 } },
+    { name: 'Ancient Artifact', reward: { research: 100, credits: 2000 } },
+    { name: 'Space Anomaly', reward: { energy: 1000, research: 50 } },
+    { name: 'Abandoned Station', reward: { metal: 800, energy: 800, credits: 1500 } }
+];
+
+function exploreSector() {
+    if (!gameState.research.warpDrive) {
+        addCombatLog('Warp Drive required to explore new sectors!', 'defeat');
+        return;
+    }
+    
+    const cost = {
+        energy: 500 + (gameState.exploration.sectorsExplored * 100),
+        credits: 1000 + (gameState.exploration.sectorsExplored * 200)
+    };
+    
+    if (!canAfford(cost)) {
+        addCombatLog('Not enough resources to explore!', 'defeat');
+        return;
+    }
+    
+    deductResources(cost);
+    
+    // Generate sector
+    const sectorType = sectorTypes[Math.floor(Math.random() * sectorTypes.length)];
+    const sectorId = `sector_${gameState.exploration.sectorsExplored}`;
+    
+    gameState.exploration.sectors[sectorId] = {
+        name: `${sectorType.name} ${gameState.exploration.sectorsExplored + 1}`,
+        type: sectorType.name,
+        bonus: sectorType.bonus,
+        multiplier: sectorType.multiplier,
+        controlled: false
+    };
+    
+    gameState.exploration.sectorsExplored++;
+    
+    // Random event chance
+    if (Math.random() < 0.3) {
+        const event = randomEvents[Math.floor(Math.random() * randomEvents.length)];
+        for (const [resource, amount] of Object.entries(event.reward)) {
+            gameState.resources[resource] += amount;
+        }
+        addCombatLog(`Discovered ${event.name}! Gained rewards.`, 'victory');
+    }
+    
+    addCombatLog(`Explored: ${gameState.exploration.sectors[sectorId].name}`, 'victory');
+    updateUI();
+}
+
+function claimSector(sectorId) {
+    const sector = gameState.exploration.sectors[sectorId];
+    
+    if (!sector) return;
+    if (sector.controlled) {
+        addCombatLog('Sector already controlled!', 'defeat');
+        return;
+    }
+    
+    const cost = { credits: 5000, metal: 2000 };
+    
+    if (!canAfford(cost)) {
+        addCombatLog('Not enough resources to claim sector!', 'defeat');
+        return;
+    }
+    
+    deductResources(cost);
+    sector.controlled = true;
+    
+    addCombatLog(`Claimed ${sector.name}! +${Math.floor((sector.multiplier - 1) * 100)}% ${sector.bonus} production`, 'victory');
+    updateUI();
+}
+
+function sendExpedition() {
+    if (!gameState.research.warpDrive) {
+        addCombatLog('Warp Drive required for expeditions!', 'defeat');
+        return;
+    }
+    
+    const fleetPower = calculateFleetPower();
+    if (fleetPower < 100) {
+        addCombatLog('Need at least 100 fleet power for expeditions!', 'defeat');
+        return;
+    }
+    
+    const cost = { energy: 1000, credits: 2000 };
+    
+    if (!canAfford(cost)) {
+        addCombatLog('Not enough resources for expedition!', 'defeat');
+        return;
+    }
+    
+    deductResources(cost);
+    
+    const duration = 60000; // 1 minute
+    const expedition = {
+        startTime: Date.now(),
+        endTime: Date.now() + duration,
+        reward: {
+            metal: 1000 + Math.floor(fleetPower * 2),
+            energy: 800 + Math.floor(fleetPower * 1.5),
+            credits: 2000 + Math.floor(fleetPower * 3),
+            research: Math.floor(fleetPower * 0.5)
+        }
+    };
+    
+    gameState.exploration.expeditions.push(expedition);
+    addCombatLog('Expedition launched! Returns in 1 minute.', 'victory');
+    updateUI();
+}
+
+function checkExpeditions() {
+    const now = Date.now();
+    const completedExpeditions = [];
+    
+    for (let i = 0; i < gameState.exploration.expeditions.length; i++) {
+        const expedition = gameState.exploration.expeditions[i];
+        if (now >= expedition.endTime) {
+            for (const [resource, amount] of Object.entries(expedition.reward)) {
+                gameState.resources[resource] += amount;
+            }
+            completedExpeditions.push(i);
+            addCombatLog('Expedition returned with resources!', 'victory');
+        }
+    }
+    
+    // Remove completed expeditions (in reverse order to maintain indices)
+    for (let i = completedExpeditions.length - 1; i >= 0; i--) {
+        gameState.exploration.expeditions.splice(completedExpeditions[i], 1);
+    }
+}
+
 // Update UI
 function updateUI() {
     // Update resources display
@@ -665,6 +910,12 @@ function updateUI() {
     document.getElementById('energy').textContent = Math.floor(gameState.resources.energy);
     document.getElementById('research').textContent = Math.floor(gameState.resources.research);
     document.getElementById('credits').textContent = Math.floor(gameState.resources.credits);
+    
+    // Update resource caps
+    document.getElementById('metal-cap').textContent = gameState.resourceCaps.metal;
+    document.getElementById('energy-cap').textContent = gameState.resourceCaps.energy;
+    document.getElementById('research-cap').textContent = gameState.resourceCaps.research;
+    document.getElementById('credits-cap').textContent = gameState.resourceCaps.credits;
     
     // Show/hide resource rates based on settings
     const rateElements = document.querySelectorAll('.resource-rate');
@@ -793,15 +1044,31 @@ function updateUI() {
     const enemiesList = document.getElementById('combat-enemies');
     enemiesList.innerHTML = '';
     
+    // Add wave controls
+    const waveControlDiv = document.createElement('div');
+    waveControlDiv.className = 'wave-controls';
+    waveControlDiv.innerHTML = `
+        <h3>Enemy Waves</h3>
+        <p>Periodic enemy attacks that must be defended against</p>
+        <button onclick="toggleEnemyWaves()" class="wave-toggle-btn">
+            ${gameState.combat.waveEnabled ? '✓ Waves Enabled' : 'Enable Waves'}
+        </button>
+        ${gameState.combat.waveEnabled ? `
+            <p>Wave ${gameState.combat.waveNumber + 1} in ${Math.max(0, Math.ceil((gameState.combat.nextWaveTime - Date.now()) / 1000))}s</p>
+        ` : ''}
+    `;
+    enemiesList.appendChild(waveControlDiv);
+    
     for (let i = 0; i < enemies.length; i++) {
         const enemy = enemies[i];
         const fleetPower = calculateFleetPower();
         const canWin = fleetPower >= enemy.power;
         
         const div = document.createElement('div');
-        div.className = 'enemy-item';
+        div.className = `enemy-item ${enemy.type === 'boss' ? 'boss-enemy' : ''}`;
         div.innerHTML = `
             <h3>${enemy.name}</h3>
+            ${enemy.description ? `<p class="enemy-description">${enemy.description}</p>` : ''}
             <p>Power: ${enemy.power}</p>
             <p>Reward: ${Object.entries(enemy.reward).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
             <p>${canWin ? '✓ Can defeat' : '✗ Too powerful'}</p>
@@ -865,6 +1132,45 @@ function updateUI() {
         `;
         prestigeMilestonesList.appendChild(div);
     }
+    
+    // Update exploration
+    document.getElementById('sectors-explored').textContent = gameState.exploration.sectorsExplored;
+    document.getElementById('active-expeditions').textContent = gameState.exploration.expeditions.length;
+    
+    const sectorsDisplay = document.getElementById('sectors-display');
+    sectorsDisplay.innerHTML = '';
+    
+    for (const [sectorId, sector] of Object.entries(gameState.exploration.sectors)) {
+        if (sector.controlled) {
+            const div = document.createElement('div');
+            div.className = 'sector-item';
+            div.innerHTML = `
+                <h4>${sector.name}</h4>
+                <p>Type: ${sector.type}</p>
+                <p>Bonus: +${Math.floor((sector.multiplier - 1) * 100)}% ${sector.bonus}</p>
+            `;
+            sectorsDisplay.appendChild(div);
+        }
+    }
+    
+    const expeditionsDisplay = document.getElementById('expeditions-display');
+    expeditionsDisplay.innerHTML = '';
+    
+    const now = Date.now();
+    for (const expedition of gameState.exploration.expeditions) {
+        const timeLeft = Math.max(0, Math.ceil((expedition.endTime - now) / 1000));
+        const div = document.createElement('div');
+        div.className = 'expedition-item';
+        div.innerHTML = `
+            <p>⏱️ Returns in ${timeLeft}s</p>
+            <p>Expected: ${Object.entries(expedition.reward).map(([r, a]) => `${r}: ${a}`).join(', ')}</p>
+        `;
+        expeditionsDisplay.appendChild(div);
+    }
+    
+    if (gameState.exploration.expeditions.length === 0) {
+        expeditionsDisplay.innerHTML = '<p>No active expeditions</p>';
+    }
 }
 
 // Game loop
@@ -881,10 +1187,48 @@ function gameLoop() {
     
     const production = calculateProduction();
     
+    // Calculate resource caps
+    const resourceCaps = {
+        metal: 10000,
+        energy: 10000,
+        research: 5000,
+        credits: 20000
+    };
+    
+    // Apply warehouse bonuses
+    const warehouseCount = gameState.buildings.warehouse || 0;
+    for (const resource in resourceCaps) {
+        resourceCaps[resource] += warehouseCount * 5000;
+    }
+    
     // Add resources based on production and game speed
     for (const [resource, rate] of Object.entries(production)) {
         gameState.resources[resource] += rate * deltaTime * gameSettings.gameSpeed;
+        // Apply caps
+        gameState.resources[resource] = Math.min(gameState.resources[resource], resourceCaps[resource]);
     }
+    
+    // Store caps for UI display
+    gameState.resourceCaps = resourceCaps;
+    
+    // Apply sector bonuses
+    for (const sector of Object.values(gameState.exploration.sectors)) {
+        if (sector.controlled && sector.bonus) {
+            const baseProduction = production[sector.bonus] || 0;
+            const bonus = baseProduction * (sector.multiplier - 1) * deltaTime * gameSettings.gameSpeed;
+            gameState.resources[sector.bonus] += bonus;
+            // Apply caps
+            gameState.resources[sector.bonus] = Math.min(gameState.resources[sector.bonus], resourceCaps[sector.bonus]);
+        }
+    }
+    
+    // Check for enemy waves
+    if (gameState.combat.waveEnabled && now >= gameState.combat.nextWaveTime) {
+        triggerEnemyWave();
+    }
+    
+    // Check expeditions
+    checkExpeditions();
     
     // Auto-combat if enabled
     if (gameSettings.autoCombatEnabled) {
