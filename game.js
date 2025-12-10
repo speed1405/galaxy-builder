@@ -1557,6 +1557,10 @@ function buildBuilding(buildingKey) {
         deductResources(cost);
         gameState.buildings[buildingKey]++;
         gameState.achievements.stats.totalBuildingsBuilt++;
+        // Trigger rebuilds if this is the first building of this type (may unlock new content)
+        if (gameState.buildings[buildingKey] === 1) {
+            needsBuildingsRebuild = true;
+        }
         updateUI();
     }
 }
@@ -1633,6 +1637,10 @@ function buildShip(shipKey) {
         deductResources(cost);
         gameState.ships[shipKey]++;
         gameState.achievements.stats.totalShipsBuilt++;
+        // Trigger rebuild if this is the first ship of this type
+        if (gameState.ships[shipKey] === 1) {
+            needsShipsRebuild = true;
+        }
         updateUI();
     }
 }
@@ -1951,6 +1959,24 @@ function establishColony() {
 }
 
 // Update UI
+// Helper function to calculate research display cost with reductions
+function calculateResearchDisplayCost(techKey, techCost) {
+    const displayCost = {};
+    for (const [resource, amount] of Object.entries(techCost)) {
+        let finalCost = amount;
+        const costReductionLevel = gameState.prestige.upgrades.costReduction;
+        if (costReductionLevel > 0) {
+            const reduction = 1 - (costReductionLevel * 0.05);
+            finalCost = Math.floor(finalCost * reduction);
+        }
+        if (gameState.research.universalConstructor && techKey !== 'universalConstructor') {
+            finalCost = Math.floor(finalCost * 0.5);
+        }
+        displayCost[resource] = finalCost;
+    }
+    return displayCost;
+}
+
 // Track if lists need to be rebuilt (only when new items unlock)
 let needsBuildingsRebuild = true;
 let needsResearchRebuild = true;
@@ -2086,19 +2112,7 @@ function updateUI() {
                 researchList.appendChild(div);
             } else if (meetsRequirements(tech.requires)) {
                 // Apply cost reduction for display
-                const displayCost = {};
-                for (const [resource, amount] of Object.entries(tech.cost)) {
-                    let finalCost = amount;
-                    const costReductionLevel = gameState.prestige.upgrades.costReduction;
-                    if (costReductionLevel > 0) {
-                        const reduction = 1 - (costReductionLevel * 0.05);
-                        finalCost = Math.floor(finalCost * reduction);
-                    }
-                    if (gameState.research.universalConstructor && key !== 'universalConstructor') {
-                        finalCost = Math.floor(finalCost * 0.5);
-                    }
-                    displayCost[resource] = finalCost;
-                }
+                const displayCost = calculateResearchDisplayCost(key, tech.cost);
                 
                 const canResearch = canAfford(displayCost);
                 const div = document.createElement('div');
@@ -2131,19 +2145,7 @@ function updateUI() {
                 }
                 
                 // Calculate display cost
-                const displayCost = {};
-                for (const [resource, amount] of Object.entries(tech.cost)) {
-                    let finalCost = amount;
-                    const costReductionLevel = gameState.prestige.upgrades.costReduction;
-                    if (costReductionLevel > 0) {
-                        const reduction = 1 - (costReductionLevel * 0.05);
-                        finalCost = Math.floor(finalCost * reduction);
-                    }
-                    if (gameState.research.universalConstructor && key !== 'universalConstructor') {
-                        finalCost = Math.floor(finalCost * 0.5);
-                    }
-                    displayCost[resource] = finalCost;
-                }
+                const displayCost = calculateResearchDisplayCost(key, tech.cost);
                 
                 const canResearch = canAfford(displayCost);
                 const button = existingItem.querySelector(`.research-btn-${key}`);
