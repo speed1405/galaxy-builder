@@ -75,6 +75,25 @@ const gameState = {
         battleship: 0
     },
     enemiesDefeated: 0,
+    prestige: {
+        darkMatter: 0,
+        totalResets: 0,
+        upgrades: {
+            productionBoost: 0, // +10% production per level
+            costReduction: 0, // -5% costs per level
+            researchSpeed: 0, // +15% research per level
+            combatPower: 0, // +20% fleet power per level
+            startingBonus: 0 // Start with more resources per level
+        },
+        milestones: {
+            enemies100: false,
+            enemies500: false,
+            enemies1000: false,
+            resources1M: false,
+            resources10M: false,
+            allTech: false
+        }
+    },
     lastUpdate: Date.now()
 };
 
@@ -240,6 +259,55 @@ const enemies = [
     { name: 'Ancient Guardian', power: 2500, reward: { metal: 5000, energy: 4000, credits: 10000 } }
 ];
 
+// Prestige Upgrade Definitions
+const prestigeUpgrades = {
+    productionBoost: {
+        name: 'Production Boost',
+        description: 'Increase all production by 10% per level',
+        baseCost: 5,
+        costMultiplier: 2,
+        maxLevel: 10
+    },
+    costReduction: {
+        name: 'Cost Reduction',
+        description: 'Reduce all costs by 5% per level',
+        baseCost: 10,
+        costMultiplier: 2.5,
+        maxLevel: 10
+    },
+    researchSpeed: {
+        name: 'Research Speed',
+        description: 'Increase research production by 15% per level',
+        baseCost: 8,
+        costMultiplier: 2.2,
+        maxLevel: 10
+    },
+    combatPower: {
+        name: 'Combat Power',
+        description: 'Increase fleet power by 20% per level',
+        baseCost: 15,
+        costMultiplier: 2.5,
+        maxLevel: 10
+    },
+    startingBonus: {
+        name: 'Starting Bonus',
+        description: 'Start new runs with bonus resources',
+        baseCost: 20,
+        costMultiplier: 3,
+        maxLevel: 5
+    }
+};
+
+// Prestige Milestone Definitions
+const prestigeMilestones = {
+    enemies100: { name: 'Defeat 100 Enemies', requirement: 100, bonus: 2, description: '+2 Dark Matter on prestige' },
+    enemies500: { name: 'Defeat 500 Enemies', requirement: 500, bonus: 5, description: '+5 Dark Matter on prestige' },
+    enemies1000: { name: 'Defeat 1000 Enemies', requirement: 1000, bonus: 10, description: '+10 Dark Matter on prestige' },
+    resources1M: { name: 'Earn 1M Total Resources', requirement: 1000000, bonus: 3, description: '+3 Dark Matter on prestige' },
+    resources10M: { name: 'Earn 10M Total Resources', requirement: 10000000, bonus: 8, description: '+8 Dark Matter on prestige' },
+    allTech: { name: 'Research All Technologies', requirement: 1, bonus: 5, description: '+5 Dark Matter on prestige' }
+};
+
 // Calculate building cost with scaling
 function getBuildingCost(buildingKey) {
     const building = buildings[buildingKey];
@@ -247,7 +315,16 @@ function getBuildingCost(buildingKey) {
     const cost = {};
     
     for (const [resource, amount] of Object.entries(building.baseCost)) {
-        cost[resource] = Math.floor(amount * Math.pow(building.costMultiplier, count));
+        let finalCost = Math.floor(amount * Math.pow(building.costMultiplier, count));
+        
+        // Apply prestige cost reduction
+        const costReductionLevel = gameState.prestige.upgrades.costReduction;
+        if (costReductionLevel > 0) {
+            const reduction = 1 - (costReductionLevel * 0.05);
+            finalCost = Math.floor(finalCost * reduction);
+        }
+        
+        cost[resource] = finalCost;
     }
     
     return cost;
@@ -287,6 +364,20 @@ function calculateProduction() {
         }
     }
     
+    // Apply prestige bonuses
+    const prodBoostLevel = gameState.prestige.upgrades.productionBoost;
+    if (prodBoostLevel > 0) {
+        const multiplier = 1 + (prodBoostLevel * 0.1);
+        for (const resource in production) {
+            production[resource] *= multiplier;
+        }
+    }
+    
+    const researchBoostLevel = gameState.prestige.upgrades.researchSpeed;
+    if (researchBoostLevel > 0) {
+        production.research *= 1 + (researchBoostLevel * 0.15);
+    }
+    
     return production;
 }
 
@@ -305,6 +396,12 @@ function calculateFleetPower() {
     if (gameState.research.shieldTech) power *= 1.5;
     if (gameState.research.advancedWeaponry) power *= 1.5;
     if (gameState.research.quantumPhysics) power *= 2;
+    
+    // Apply prestige combat power bonus
+    const combatLevel = gameState.prestige.upgrades.combatPower;
+    if (combatLevel > 0) {
+        power *= 1 + (combatLevel * 0.2);
+    }
     
     return Math.floor(power);
 }
@@ -337,8 +434,20 @@ function researchTech(techKey) {
         return;
     }
     
-    if (canAfford(tech.cost)) {
-        deductResources(tech.cost);
+    // Apply cost reduction
+    const cost = {};
+    for (const [resource, amount] of Object.entries(tech.cost)) {
+        let finalCost = amount;
+        const costReductionLevel = gameState.prestige.upgrades.costReduction;
+        if (costReductionLevel > 0) {
+            const reduction = 1 - (costReductionLevel * 0.05);
+            finalCost = Math.floor(finalCost * reduction);
+        }
+        cost[resource] = finalCost;
+    }
+    
+    if (canAfford(cost)) {
+        deductResources(cost);
         gameState.research[techKey] = true;
         addCombatLog(`Researched: ${tech.name}!`, 'victory');
         updateUI();
@@ -359,8 +468,20 @@ function buildShip(shipKey) {
         return;
     }
     
-    if (canAfford(ship.cost)) {
-        deductResources(ship.cost);
+    // Apply cost reduction
+    const cost = {};
+    for (const [resource, amount] of Object.entries(ship.cost)) {
+        let finalCost = amount;
+        const costReductionLevel = gameState.prestige.upgrades.costReduction;
+        if (costReductionLevel > 0) {
+            const reduction = 1 - (costReductionLevel * 0.05);
+            finalCost = Math.floor(finalCost * reduction);
+        }
+        cost[resource] = finalCost;
+    }
+    
+    if (canAfford(cost)) {
+        deductResources(cost);
         gameState.ships[shipKey]++;
         updateUI();
     }
@@ -543,6 +664,62 @@ function updateUI() {
         `;
         enemiesList.appendChild(div);
     }
+    
+    // Update prestige
+    document.getElementById('dark-matter').textContent = gameState.prestige.darkMatter;
+    document.getElementById('total-resets').textContent = gameState.prestige.totalResets;
+    document.getElementById('next-prestige-gain').textContent = calculatePrestigeGain();
+    
+    const prestigeUpgradesList = document.getElementById('prestige-upgrades-list');
+    prestigeUpgradesList.innerHTML = '';
+    
+    for (const [key, upgrade] of Object.entries(prestigeUpgrades)) {
+        const currentLevel = gameState.prestige.upgrades[key];
+        const cost = getPrestigeUpgradeCost(key);
+        const canBuy = gameState.prestige.darkMatter >= cost && currentLevel < upgrade.maxLevel;
+        
+        const div = document.createElement('div');
+        div.className = 'prestige-upgrade-item';
+        div.innerHTML = `
+            <h4>${upgrade.name}</h4>
+            <p>${upgrade.description}</p>
+            <p>Level: ${currentLevel} / ${upgrade.maxLevel}</p>
+            ${currentLevel < upgrade.maxLevel ? `
+                <p>Cost: ${cost} Dark Matter</p>
+                <button onclick="buyPrestigeUpgrade('${key}')" ${!canBuy ? 'disabled' : ''}>Upgrade</button>
+            ` : '<p>✓ Max Level</p>'}
+        `;
+        prestigeUpgradesList.appendChild(div);
+    }
+    
+    const prestigeMilestonesList = document.getElementById('prestige-milestones-list');
+    prestigeMilestonesList.innerHTML = '';
+    
+    for (const [key, milestone] of Object.entries(prestigeMilestones)) {
+        const achieved = gameState.prestige.milestones[key];
+        let progress = 0;
+        
+        if (key.includes('enemies')) {
+            progress = gameState.enemiesDefeated;
+        } else if (key.includes('resources')) {
+            const totalRes = gameState.resources.metal + gameState.resources.energy + 
+                            gameState.resources.research + gameState.resources.credits;
+            progress = totalRes;
+        } else if (key === 'allTech') {
+            const completedTech = Object.values(gameState.research).filter(val => val === true).length;
+            const totalTech = Object.keys(gameState.research).length;
+            progress = completedTech >= totalTech ? 1 : 0;
+        }
+        
+        const div = document.createElement('div');
+        div.className = `prestige-milestone-item ${achieved ? 'achieved' : ''}`;
+        div.innerHTML = `
+            <h4>${milestone.name} ${achieved ? '✓' : ''}</h4>
+            <p>${milestone.description}</p>
+            <p>Progress: ${Math.min(progress, milestone.requirement)} / ${milestone.requirement}</p>
+        `;
+        prestigeMilestonesList.appendChild(div);
+    }
 }
 
 // Game loop
@@ -606,6 +783,151 @@ function resetGame() {
         localStorage.removeItem('galaxyBuilderSettings');
         location.reload();
     }
+}
+
+// Calculate Dark Matter earned on prestige
+function calculatePrestigeGain() {
+    let darkMatter = 0;
+    
+    // Base dark matter from enemies defeated (1 DM per 10 enemies)
+    darkMatter += Math.floor(gameState.enemiesDefeated / 10);
+    
+    // Dark matter from total resources earned
+    const totalResources = gameState.resources.metal + gameState.resources.energy + 
+                           gameState.resources.research + gameState.resources.credits;
+    darkMatter += Math.floor(totalResources / 100000);
+    
+    // Add milestone bonuses
+    if (gameState.enemiesDefeated >= 100 && !gameState.prestige.milestones.enemies100) {
+        darkMatter += prestigeMilestones.enemies100.bonus;
+    }
+    if (gameState.enemiesDefeated >= 500 && !gameState.prestige.milestones.enemies500) {
+        darkMatter += prestigeMilestones.enemies500.bonus;
+    }
+    if (gameState.enemiesDefeated >= 1000 && !gameState.prestige.milestones.enemies1000) {
+        darkMatter += prestigeMilestones.enemies1000.bonus;
+    }
+    
+    const totalRes = gameState.resources.metal + gameState.resources.energy + 
+                     gameState.resources.research + gameState.resources.credits;
+    if (totalRes >= 1000000 && !gameState.prestige.milestones.resources1M) {
+        darkMatter += prestigeMilestones.resources1M.bonus;
+    }
+    if (totalRes >= 10000000 && !gameState.prestige.milestones.resources10M) {
+        darkMatter += prestigeMilestones.resources10M.bonus;
+    }
+    
+    // Check if all research is complete
+    const allResearchComplete = Object.values(gameState.research).every(val => val === true);
+    if (allResearchComplete && !gameState.prestige.milestones.allTech) {
+        darkMatter += prestigeMilestones.allTech.bonus;
+    }
+    
+    return Math.max(darkMatter, 1); // Minimum 1 dark matter
+}
+
+// Prestige reset
+function prestigeReset() {
+    const dmGain = calculatePrestigeGain();
+    
+    const message = `You will gain ${dmGain} Dark Matter. All progress will be reset, but you'll keep prestige upgrades. Continue?`;
+    if (!confirm(message)) {
+        return;
+    }
+    
+    // Update milestones before reset
+    if (gameState.enemiesDefeated >= 100) gameState.prestige.milestones.enemies100 = true;
+    if (gameState.enemiesDefeated >= 500) gameState.prestige.milestones.enemies500 = true;
+    if (gameState.enemiesDefeated >= 1000) gameState.prestige.milestones.enemies1000 = true;
+    
+    const totalRes = gameState.resources.metal + gameState.resources.energy + 
+                     gameState.resources.research + gameState.resources.credits;
+    if (totalRes >= 1000000) gameState.prestige.milestones.resources1M = true;
+    if (totalRes >= 10000000) gameState.prestige.milestones.resources10M = true;
+    
+    const allResearchComplete = Object.values(gameState.research).every(val => val === true);
+    if (allResearchComplete) gameState.prestige.milestones.allTech = true;
+    
+    // Award dark matter
+    gameState.prestige.darkMatter += dmGain;
+    gameState.prestige.totalResets++;
+    
+    // Save prestige data
+    const prestigeData = JSON.parse(JSON.stringify(gameState.prestige));
+    
+    // Reset resources
+    gameState.resources = {
+        metal: 0,
+        energy: 0,
+        research: 0,
+        credits: 100
+    };
+    
+    // Apply starting bonus if unlocked
+    const startingLevel = gameState.prestige.upgrades.startingBonus;
+    if (startingLevel > 0) {
+        const bonus = startingLevel * 100;
+        gameState.resources.metal += bonus;
+        gameState.resources.energy += bonus;
+        gameState.resources.credits += bonus * 2;
+    }
+    
+    // Reset buildings
+    for (const key in gameState.buildings) {
+        gameState.buildings[key] = 0;
+    }
+    
+    // Reset research
+    for (const key in gameState.research) {
+        gameState.research[key] = false;
+    }
+    
+    // Reset ships
+    for (const key in gameState.ships) {
+        gameState.ships[key] = 0;
+    }
+    
+    // Reset enemies defeated
+    gameState.enemiesDefeated = 0;
+    
+    // Restore prestige data
+    gameState.prestige = prestigeData;
+    
+    saveGame();
+    updateUI();
+    addCombatLog(`Prestige activated! Gained ${dmGain} Dark Matter!`, 'victory');
+}
+
+// Get prestige upgrade cost
+function getPrestigeUpgradeCost(upgradeKey) {
+    const upgrade = prestigeUpgrades[upgradeKey];
+    const currentLevel = gameState.prestige.upgrades[upgradeKey];
+    return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, currentLevel));
+}
+
+// Purchase prestige upgrade
+function buyPrestigeUpgrade(upgradeKey) {
+    const upgrade = prestigeUpgrades[upgradeKey];
+    const currentLevel = gameState.prestige.upgrades[upgradeKey];
+    
+    if (currentLevel >= upgrade.maxLevel) {
+        addCombatLog('Upgrade is already at max level!', 'defeat');
+        return;
+    }
+    
+    const cost = getPrestigeUpgradeCost(upgradeKey);
+    
+    if (gameState.prestige.darkMatter < cost) {
+        addCombatLog('Not enough Dark Matter!', 'defeat');
+        return;
+    }
+    
+    gameState.prestige.darkMatter -= cost;
+    gameState.prestige.upgrades[upgradeKey]++;
+    
+    saveGame();
+    updateUI();
+    addCombatLog(`Purchased ${upgrade.name} level ${gameState.prestige.upgrades[upgradeKey]}!`, 'victory');
 }
 
 // Auto-combat helper
