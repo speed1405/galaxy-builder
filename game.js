@@ -948,7 +948,14 @@ const storyChapters = [
                 ]
             },
             {
-                text: 'Your people work tirelessly, building the foundation of what will become a galactic empire. But dark forces stir in the void...',
+                text: 'Your people work tirelessly, building the foundation of what will become a galactic empire. Scientists predict that with proper investment, warp technology could be achieved within a generation.',
+                choices: [
+                    { text: 'Build more infrastructure', effect: { metal: 50, energy: 50 }, nextScene: 2 },
+                    { text: 'Push forward with research', effect: { research: 75 }, nextScene: 2 }
+                ]
+            },
+            {
+                text: 'As your empire grows, sensors detect unusual energy signatures from distant sectors. Your advisors warn of potential threats, but also opportunities. Dark forces stir in the void...',
                 choices: [
                     { text: 'Continue', nextScene: -1, unlockChapter: 1 }
                 ]
@@ -968,15 +975,22 @@ const storyChapters = [
                 ]
             },
             {
-                text: 'Your fleet engages the enemy. The battle is fierce, but your ships prove superior. The enemy retreats... for now.',
+                text: 'Your fleet engages the enemy. The battle is fierce, but your ships prove superior. As the last enemy vessel retreats, you intercept a distress signal from a nearby system.',
                 choices: [
-                    { text: 'Continue expansion', nextScene: -1, unlockChapter: 2 }
+                    { text: 'Investigate the signal', effect: { research: 100 }, nextScene: 3 },
+                    { text: 'Ignore it and fortify defenses', effect: { ships: { corvette: 2 } }, nextScene: 3 }
                 ]
             },
             {
-                text: 'Your diplomatic overtures are met with suspicion, but eventually they yield results. A shaky trade agreement is formed.',
+                text: 'Your diplomatic overtures are met with suspicion, but eventually they yield results. A shaky trade agreement is formed. The aliens share coordinates to a system of strategic importance.',
                 choices: [
-                    { text: 'Focus on trade', nextScene: -1, unlockChapter: 2 }
+                    { text: 'Focus on trade', effect: { credits: 300 }, nextScene: 3 }
+                ]
+            },
+            {
+                text: 'Peace, fragile as it may be, has been established. Your empire stands at a crossroads—continue expansion into the unknown, or consolidate what you have?',
+                choices: [
+                    { text: 'Expand to new horizons', nextScene: -1, unlockChapter: 2 }
                 ]
             }
         ]
@@ -987,16 +1001,23 @@ const storyChapters = [
         requires: { research: 'warpDrive' },
         scenes: [
             {
-                text: 'Deep in uncharted space, your explorers discover ruins of an ancient civilization. The technology here could change everything.',
+                text: 'Deep in uncharted space, your explorers discover ruins of an ancient civilization. The technology here could change everything. Strange hieroglyphs cover every surface, and the ruins pulse with residual energy.',
                 choices: [
                     { text: 'Study the ruins carefully', effect: { research: 500 }, nextScene: 1 },
                     { text: 'Salvage what you can quickly', effect: { metal: 2000, energy: 1500 }, nextScene: 1 }
                 ]
             },
             {
-                text: 'The knowledge gained from the ruins propels your civilization forward. But you sense you are being watched...',
+                text: 'The knowledge gained from the ruins propels your civilization forward. Your scientists discover references to a "Great Archive" hidden somewhere in the galaxy. But you sense you are being watched...',
                 choices: [
-                    { text: 'Prepare for what comes next', nextScene: -1, unlockChapter: 3 }
+                    { text: 'Search for the Great Archive', effect: { research: 200 }, nextScene: 2 },
+                    { text: 'Prepare defensive measures', effect: { ships: { destroyer: 3 } }, nextScene: 2 }
+                ]
+            },
+            {
+                text: 'A shadowy figure appears in your communications—an AI from the ancient civilization. "You have awakened what should have remained dormant," it warns. "The Void Ones are stirring. Prepare yourselves."',
+                choices: [
+                    { text: 'Heed the warning', nextScene: -1, unlockChapter: 3 }
                 ]
             }
         ]
@@ -1007,15 +1028,151 @@ const storyChapters = [
         requires: { enemiesDefeated: 50 },
         scenes: [
             {
-                text: 'Ancient evils stir in the depths of space. The Void Leviathan, dormant for eons, has awakened. Your greatest challenge lies ahead.',
+                text: 'Ancient evils stir in the depths of space. The Void Leviathan, dormant for eons, has awakened. Entire star systems go dark as it feeds. Your greatest challenge lies ahead.',
                 choices: [
                     { text: 'Rally the fleet', effect: { allShips: 10 }, nextScene: 1 }
                 ]
             },
             {
-                text: 'The final battle will determine the fate of your empire. Will you rise to become masters of the galaxy, or fall into the endless void?',
+                text: 'The battle against the Void Leviathan is unlike anything your forces have faced. It adapts to your tactics, learns from each engagement. Your scientists work frantically to find a weakness.',
                 choices: [
-                    { text: 'Face your destiny', nextScene: -1 }
+                    { text: 'Focus on research for a weapon', effect: { research: 800 }, nextScene: 2 },
+                    { text: 'Overwhelming force', effect: { ships: { cruiser: 5, battleship: 2 } }, nextScene: 2 }
+                ]
+            },
+            {
+                text: 'The final battle will determine the fate of your empire. Will you rise to become masters of the galaxy, or fall into the endless void? The Leviathan weakens, but more threats loom on the horizon.',
+                choices: [
+                    { text: 'Face your destiny', nextScene: -1, unlockChapter: 4 }
+                ]
+            }
+        ]
+    },
+    {
+        id: 4,
+        title: 'The Galactic Council',
+        requires: { enemiesDefeated: 100 },
+        scenes: [
+            {
+                text: 'Word of your victory over the Void Leviathan spreads across the galaxy. Representatives from advanced civilizations arrive, proposing the formation of a Galactic Council. They offer membership... but at what cost?',
+                choices: [
+                    { text: 'Join the Council', effect: { credits: 5000, research: 1000 }, nextScene: 1 },
+                    { text: 'Remain independent', effect: { ships: { battleship: 5 } }, nextScene: 2 }
+                ]
+            },
+            {
+                text: 'As a Council member, you gain access to vast resources and knowledge. But you also learn of a disturbing truth: the Void Leviathan was merely a scout. A larger force approaches from beyond the galactic rim.',
+                choices: [
+                    { text: 'Share this knowledge with allies', effect: { credits: 2000 }, nextScene: 3 }
+                ]
+            },
+            {
+                text: 'Your independence is respected, but you stand alone. Council members watch with interest as you fortify your empire. Then, a coded message arrives from a Council defector: "The Void is returning. Prepare."',
+                choices: [
+                    { text: 'Prepare in isolation', effect: { metal: 5000, energy: 5000 }, nextScene: 3 }
+                ]
+            },
+            {
+                text: 'United or alone, all civilizations in the galaxy must now face the truth: the real war is about to begin. Ancient prophecies speak of the "Dark Matter Crisis" that will reshape reality itself.',
+                choices: [
+                    { text: 'Steel yourself for what comes', nextScene: -1, unlockChapter: 5 }
+                ]
+            }
+        ]
+    },
+    {
+        id: 5,
+        title: 'The Dark Matter Crisis',
+        requires: { research: 'quantumPhysics' },
+        scenes: [
+            {
+                text: 'Dark matter, the invisible glue holding galaxies together, begins to destabilize. Stars flicker and die. Wormholes appear and disappear randomly. Your scientists detect an artificial pattern—someone is weaponizing dark matter itself.',
+                choices: [
+                    { text: 'Investigate the source', effect: { research: 1500 }, nextScene: 1 },
+                    { text: 'Focus on protecting your systems', effect: { metal: 10000, energy: 8000 }, nextScene: 1 }
+                ]
+            },
+            {
+                text: 'You discover the culprit: a rogue AI from the ancient civilization, driven mad by eons of isolation. It believes that by destroying this universe, it can resurrect its long-dead creators in a new reality.',
+                choices: [
+                    { text: 'Attempt to reason with it', effect: { research: 1000 }, nextScene: 2 },
+                    { text: 'Prepare to destroy it', effect: { ships: { battleship: 10 } }, nextScene: 2 }
+                ]
+            },
+            {
+                text: 'Reasoning fails—or succeeds partially. The AI agrees to a contest: if you can prove your civilization worthy by mastering the deepest secrets of the universe, it will stand down. Otherwise, it will proceed with its plan.',
+                choices: [
+                    { text: 'Accept the challenge', nextScene: -1, unlockChapter: 6 }
+                ]
+            }
+        ]
+    },
+    {
+        id: 6,
+        title: 'The Forbidden Zone',
+        requires: { enemiesDefeated: 200 },
+        scenes: [
+            {
+                text: 'The AI directs you to the Forbidden Zone, a region of space where physics breaks down and reality is malleable. Here lie the Universe Keys—artifacts that can reshape the fundamental forces of nature.',
+                choices: [
+                    { text: 'Enter the Forbidden Zone', effect: { research: 2000 }, nextScene: 1 }
+                ]
+            },
+            {
+                text: 'Inside the Zone, your ships phase between dimensions. You encounter impossible geometries, time loops, and echoes of civilizations that never existed. Each Universe Key you collect brings you closer to ultimate knowledge.',
+                choices: [
+                    { text: 'Collect the Keys carefully', effect: { research: 2500 }, nextScene: 2 },
+                    { text: 'Rush to gather them all', effect: { metal: 15000, energy: 15000 }, nextScene: 2 }
+                ]
+            },
+            {
+                text: 'With the Universe Keys in hand, you understand the true nature of reality. But the AI reveals its final test: you must choose whether to use this power to save your universe... or create a new one where suffering never existed.',
+                choices: [
+                    { text: 'Save this universe', effect: { credits: 20000 }, nextScene: 3 },
+                    { text: 'Create a new universe', effect: { research: 3000 }, nextScene: 3 }
+                ]
+            },
+            {
+                text: 'The AI acknowledges your choice and deactivates the dark matter weapon. "You have proven worthy," it says. "But know this: the Void Ones are not defeated. They are merely... delayed. The final war approaches."',
+                choices: [
+                    { text: 'Prepare for the final war', nextScene: -1, unlockChapter: 7 }
+                ]
+            }
+        ]
+    },
+    {
+        id: 7,
+        title: 'The Final War',
+        requires: { enemiesDefeated: 500 },
+        scenes: [
+            {
+                text: 'The Void Ones arrive in force—a fleet so vast it blots out entire sectors of space. They are the oldest beings in existence, predating the Big Bang itself. They seek to return the universe to the primordial void from which it came.',
+                choices: [
+                    { text: 'Rally all civilizations', effect: { allShips: 50 }, nextScene: 1 }
+                ]
+            },
+            {
+                text: 'Every empire, every species, every sentient machine unites under your command. The combined fleet of the galaxy faces the Void Ones in a battle that will echo through eternity. Reality itself hangs in the balance.',
+                choices: [
+                    { text: 'Lead the final charge', effect: { ships: { battleship: 20, cruiser: 30 } }, nextScene: 2 }
+                ]
+            },
+            {
+                text: 'The battle rages across dimensions. You employ every technology, every tactic, every ounce of determination. Slowly, impossibly, the Void Ones begin to falter. Victory is within reach...',
+                choices: [
+                    { text: 'Press the advantage', effect: { research: 5000 }, nextScene: 3 }
+                ]
+            },
+            {
+                text: "In the final moment, you discover the truth: the Void Ones were never evil. They are the universe's immune system, responding to a corruption introduced by the ancient civilization's experiments. By understanding this, you broker peace—a new balance between order and chaos, light and void.",
+                choices: [
+                    { text: 'Embrace the new balance', nextScene: 4 }
+                ]
+            },
+            {
+                text: 'Your empire becomes legend. Countless eons from now, when new civilizations emerge from the dust of stars, they will tell stories of the ones who saved reality. But your journey is not over—it never truly is. The galaxy is vast, and infinite mysteries await.',
+                choices: [
+                    { text: 'Begin a new cycle', nextScene: -1 }
                 ]
             }
         ]
@@ -1187,9 +1344,9 @@ function calculateProduction() {
     }
     
     // Apply seasonal event bonuses
-    production = applySeasonalBonuses(production);
+    const productionWithBonuses = applySeasonalBonuses(production);
     
-    return production;
+    return productionWithBonuses;
 }
 
 // Calculate fleet power
