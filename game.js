@@ -1592,6 +1592,10 @@ function researchTech(techKey) {
         gameState.research[techKey] = true;
         gameState.achievements.stats.totalResearchCompleted++;
         addCombatLog(`Researched: ${tech.name}!`, 'victory');
+        // Trigger rebuilds as research may unlock new buildings/ships
+        needsBuildingsRebuild = true;
+        needsResearchRebuild = true;
+        needsShipsRebuild = true;
         updateUI();
     }
 }
@@ -1947,6 +1951,11 @@ function establishColony() {
 }
 
 // Update UI
+// Track if lists need to be rebuilt (only when new items unlock)
+let needsBuildingsRebuild = true;
+let needsResearchRebuild = true;
+let needsShipsRebuild = true;
+
 function updateUI() {
     // Update resources display
     const production = calculateProduction();
@@ -1972,134 +1981,244 @@ function updateUI() {
     document.getElementById('energy-rate').textContent = production.energy.toFixed(1);
     document.getElementById('research-rate').textContent = production.research.toFixed(1);
     
-    // Update buildings
+    // Update buildings - only rebuild if needed
     const buildingsList = document.getElementById('buildings-list');
-    buildingsList.innerHTML = '';
+    if (needsBuildingsRebuild) {
+        buildingsList.innerHTML = '';
     
-    for (const [key, building] of Object.entries(buildings)) {
-        if (!meetsRequirements(building.requires) && gameState.buildings[key] === 0) continue;
-        
-        const cost = getBuildingCost(key);
-        const canBuild = canAfford(cost) && meetsRequirements(building.requires);
-        
-        // Build tooltip text
-        let tooltipText = building.description;
-        if (building.produces && Object.keys(building.produces).length > 0) {
-            tooltipText += `\n\nProduces: ${Object.entries(building.produces).map(([r, a]) => `${a} ${r}/s`).join(', ')}`;
-        }
-        if (building.capBonus) {
-            tooltipText += `\n\nIncreases all resource caps by ${building.capBonus}`;
-        }
-        if (building.defensePower) {
-            tooltipText += `\n\nDefense Power: ${building.defensePower}`;
-        }
-        if (building.refinesPerSecond) {
-            tooltipText += `\n\nConverts ${building.refinesPerSecond * 2} metal → ${building.refinesPerSecond} energy per second`;
-        }
-        if (building.productionBonus) {
-            tooltipText += `\n\nBoosts all production by ${building.productionBonus * 100}%`;
-        }
-        
-        const div = document.createElement('div');
-        div.className = 'building-item tooltip';
-        div.innerHTML = `
-            <h3>${building.name}</h3>
-            <p>${building.description}</p>
-            <p>Owned: <span class="building-count">${gameState.buildings[key]}</span></p>
-            <p>Cost: ${Object.entries(cost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
-            <div class="button-group">
-                <button onclick="buildBuilding('${key}')" ${!canBuild ? 'disabled' : ''}>Build x1</button>
-                <button onclick="bulkBuildBuilding('${key}', 10)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x10</button>
-                <button onclick="bulkBuildBuilding('${key}', 100)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x100</button>
-            </div>
-            ${gameSettings.showTooltips ? `<span class="tooltiptext">${tooltipText.replace(/\n/g, '<br>')}</span>` : ''}
-        `;
-        buildingsList.appendChild(div);
-    }
-    
-    // Update research
-    const researchList = document.getElementById('research-list');
-    researchList.innerHTML = '';
-    
-    for (const [key, tech] of Object.entries(research)) {
-        if (gameState.research[key]) {
-            const div = document.createElement('div');
-            const category = tech.category ? ` tech-${tech.category}` : '';
-            div.className = `research-item researched${category} tooltip`;
-            div.innerHTML = `
-                <h3>${tech.name}</h3>
-                ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
-                <p>${tech.description}</p>
-                <p>✓ Researched</p>
-                ${gameSettings.showTooltips ? `<span class="tooltiptext">Unlocked: ${tech.description}</span>` : ''}
-            `;
-            researchList.appendChild(div);
-        } else if (meetsRequirements(tech.requires)) {
-            // Apply cost reduction for display
-            const displayCost = {};
-            for (const [resource, amount] of Object.entries(tech.cost)) {
-                let finalCost = amount;
-                const costReductionLevel = gameState.prestige.upgrades.costReduction;
-                if (costReductionLevel > 0) {
-                    const reduction = 1 - (costReductionLevel * 0.05);
-                    finalCost = Math.floor(finalCost * reduction);
-                }
-                if (gameState.research.universalConstructor && key !== 'universalConstructor') {
-                    finalCost = Math.floor(finalCost * 0.5);
-                }
-                displayCost[resource] = finalCost;
+        for (const [key, building] of Object.entries(buildings)) {
+            if (!meetsRequirements(building.requires) && gameState.buildings[key] === 0) continue;
+            
+            const cost = getBuildingCost(key);
+            const canBuild = canAfford(cost) && meetsRequirements(building.requires);
+            
+            // Build tooltip text
+            let tooltipText = building.description;
+            if (building.produces && Object.keys(building.produces).length > 0) {
+                tooltipText += `\n\nProduces: ${Object.entries(building.produces).map(([r, a]) => `${a} ${r}/s`).join(', ')}`;
+            }
+            if (building.capBonus) {
+                tooltipText += `\n\nIncreases all resource caps by ${building.capBonus}`;
+            }
+            if (building.defensePower) {
+                tooltipText += `\n\nDefense Power: ${building.defensePower}`;
+            }
+            if (building.refinesPerSecond) {
+                tooltipText += `\n\nConverts ${building.refinesPerSecond * 2} metal → ${building.refinesPerSecond} energy per second`;
+            }
+            if (building.productionBonus) {
+                tooltipText += `\n\nBoosts all production by ${building.productionBonus * 100}%`;
             }
             
-            const canResearch = canAfford(displayCost);
             const div = document.createElement('div');
-            const category = tech.category ? ` tech-${tech.category}` : '';
-            
-            let tooltipText = `${tech.description}\n\nRequires: ${tech.requires || 'None'}`;
-            
-            div.className = `research-item${category} tooltip`;
+            div.className = 'building-item tooltip';
+            div.setAttribute('data-building', key);
             div.innerHTML = `
-                <h3>${tech.name}</h3>
-                ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
-                <p>${tech.description}</p>
-                <p>Cost: ${Object.entries(displayCost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
-                <button onclick="researchTech('${key}')" ${!canResearch ? 'disabled' : ''}>Research</button>
+                <h3>${building.name}</h3>
+                <p>${building.description}</p>
+                <p>Owned: <span class="building-count" data-building-count="${key}">${gameState.buildings[key]}</span></p>
+                <p class="building-cost" data-building-cost="${key}">Cost: ${Object.entries(cost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
+                <div class="button-group">
+                    <button onclick="buildBuilding('${key}')" class="build-btn-${key}" ${!canBuild ? 'disabled' : ''}>Build x1</button>
+                    <button onclick="bulkBuildBuilding('${key}', 10)" class="bulk-btn build-btn-${key}-10" ${!canBuild ? 'disabled' : ''}>x10</button>
+                    <button onclick="bulkBuildBuilding('${key}', 100)" class="bulk-btn build-btn-${key}-100" ${!canBuild ? 'disabled' : ''}>x100</button>
+                </div>
                 ${gameSettings.showTooltips ? `<span class="tooltiptext">${tooltipText.replace(/\n/g, '<br>')}</span>` : ''}
             `;
-            researchList.appendChild(div);
+            buildingsList.appendChild(div);
+        }
+        needsBuildingsRebuild = false;
+    } else {
+        // Just update the values without rebuilding
+        for (const [key, building] of Object.entries(buildings)) {
+            const existingItem = buildingsList.querySelector(`[data-building="${key}"]`);
+            if (!existingItem) {
+                needsBuildingsRebuild = true;
+                continue;
+            }
+            
+            // Update count
+            const countSpan = existingItem.querySelector(`[data-building-count="${key}"]`);
+            if (countSpan) {
+                countSpan.textContent = gameState.buildings[key];
+            }
+            
+            // Update cost
+            const cost = getBuildingCost(key);
+            const costP = existingItem.querySelector(`[data-building-cost="${key}"]`);
+            if (costP) {
+                costP.textContent = `Cost: ${Object.entries(cost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}`;
+            }
+            
+            // Update button states
+            const canBuild = canAfford(cost) && meetsRequirements(building.requires);
+            const buttons = [
+                existingItem.querySelector(`.build-btn-${key}`),
+                existingItem.querySelector(`.build-btn-${key}-10`),
+                existingItem.querySelector(`.build-btn-${key}-100`)
+            ];
+            buttons.forEach(btn => {
+                if (btn) {
+                    btn.disabled = !canBuild;
+                }
+            });
         }
     }
     
-    // Update ships
-    const shipsList = document.getElementById('ships-list');
-    shipsList.innerHTML = '';
+    // Update research - only rebuild if needed
+    const researchList = document.getElementById('research-list');
+    if (needsResearchRebuild) {
+        researchList.innerHTML = '';
     
-    for (const [key, ship] of Object.entries(ships)) {
-        if (!meetsRequirements(ship.requires)) continue;
-        
-        const canBuild = canAfford(ship.cost) && gameState.buildings.shipyard > 0;
-        
-        let tooltipText = `${ship.description}\n\nPower: ${ship.power}`;
-        if (ship.supportBonus) tooltipText += `\n\nSupport Bonus: +${ship.supportBonus * 100}% fleet effectiveness`;
-        if (ship.carrierBonus) tooltipText += `\n\nCarrier Bonus: +${ship.carrierBonus} virtual fighters`;
-        if (ship.miningBonus) {
-            tooltipText += `\n\nMining: ${Object.entries(ship.miningBonus).map(([r, a]) => `${a} ${r}/s`).join(', ')}`;
+        for (const [key, tech] of Object.entries(research)) {
+            if (gameState.research[key]) {
+                const div = document.createElement('div');
+                const category = tech.category ? ` tech-${tech.category}` : '';
+                div.className = `research-item researched${category} tooltip`;
+                div.setAttribute('data-research', key);
+                div.innerHTML = `
+                    <h3>${tech.name}</h3>
+                    ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
+                    <p>${tech.description}</p>
+                    <p>✓ Researched</p>
+                    ${gameSettings.showTooltips ? `<span class="tooltiptext">Unlocked: ${tech.description}</span>` : ''}
+                `;
+                researchList.appendChild(div);
+            } else if (meetsRequirements(tech.requires)) {
+                // Apply cost reduction for display
+                const displayCost = {};
+                for (const [resource, amount] of Object.entries(tech.cost)) {
+                    let finalCost = amount;
+                    const costReductionLevel = gameState.prestige.upgrades.costReduction;
+                    if (costReductionLevel > 0) {
+                        const reduction = 1 - (costReductionLevel * 0.05);
+                        finalCost = Math.floor(finalCost * reduction);
+                    }
+                    if (gameState.research.universalConstructor && key !== 'universalConstructor') {
+                        finalCost = Math.floor(finalCost * 0.5);
+                    }
+                    displayCost[resource] = finalCost;
+                }
+                
+                const canResearch = canAfford(displayCost);
+                const div = document.createElement('div');
+                const category = tech.category ? ` tech-${tech.category}` : '';
+                
+                let tooltipText = `${tech.description}\n\nRequires: ${tech.requires || 'None'}`;
+                
+                div.className = `research-item${category} tooltip`;
+                div.setAttribute('data-research', key);
+                div.innerHTML = `
+                    <h3>${tech.name}</h3>
+                    ${tech.category ? `<span class="tech-category">[${tech.category.toUpperCase()}]</span>` : ''}
+                    <p>${tech.description}</p>
+                    <p class="research-cost" data-research-cost="${key}">Cost: ${Object.entries(displayCost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
+                    <button onclick="researchTech('${key}')" class="research-btn-${key}" ${!canResearch ? 'disabled' : ''}>Research</button>
+                    ${gameSettings.showTooltips ? `<span class="tooltiptext">${tooltipText.replace(/\n/g, '<br>')}</span>` : ''}
+                `;
+                researchList.appendChild(div);
+            }
         }
-        
-        const div = document.createElement('div');
-        div.className = 'ship-item tooltip';
-        div.innerHTML = `
-            <h3>${ship.name}</h3>
-            <p>${ship.description}</p>
-            <p>Power: ${ship.power} | Owned: <span class="ship-count">${gameState.ships[key]}</span></p>
-            <p>Cost: ${Object.entries(ship.cost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
-            <div class="button-group">
-                <button onclick="buildShip('${key}')" ${!canBuild ? 'disabled' : ''}>Build x1</button>
-                <button onclick="bulkBuildShip('${key}', 10)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x10</button>
-                <button onclick="bulkBuildShip('${key}', 100)" ${!canBuild ? 'disabled' : ''} class="bulk-btn">x100</button>
-            </div>
-            ${gameSettings.showTooltips ? `<span class="tooltiptext">${tooltipText.replace(/\n/g, '<br>')}</span>` : ''}
-        `;
-        shipsList.appendChild(div);
+        needsResearchRebuild = false;
+    } else {
+        // Just update button states for unlocked but not yet researched items
+        for (const [key, tech] of Object.entries(research)) {
+            if (!gameState.research[key] && meetsRequirements(tech.requires)) {
+                const existingItem = researchList.querySelector(`[data-research="${key}"]`);
+                if (!existingItem) {
+                    needsResearchRebuild = true;
+                    continue;
+                }
+                
+                // Calculate display cost
+                const displayCost = {};
+                for (const [resource, amount] of Object.entries(tech.cost)) {
+                    let finalCost = amount;
+                    const costReductionLevel = gameState.prestige.upgrades.costReduction;
+                    if (costReductionLevel > 0) {
+                        const reduction = 1 - (costReductionLevel * 0.05);
+                        finalCost = Math.floor(finalCost * reduction);
+                    }
+                    if (gameState.research.universalConstructor && key !== 'universalConstructor') {
+                        finalCost = Math.floor(finalCost * 0.5);
+                    }
+                    displayCost[resource] = finalCost;
+                }
+                
+                const canResearch = canAfford(displayCost);
+                const button = existingItem.querySelector(`.research-btn-${key}`);
+                if (button) {
+                    button.disabled = !canResearch;
+                }
+            }
+        }
+    }
+    
+    // Update ships - only rebuild if needed
+    const shipsList = document.getElementById('ships-list');
+    if (needsShipsRebuild) {
+        shipsList.innerHTML = '';
+    
+        for (const [key, ship] of Object.entries(ships)) {
+            if (!meetsRequirements(ship.requires)) continue;
+            
+            const canBuild = canAfford(ship.cost) && gameState.buildings.shipyard > 0;
+            
+            let tooltipText = `${ship.description}\n\nPower: ${ship.power}`;
+            if (ship.supportBonus) tooltipText += `\n\nSupport Bonus: +${ship.supportBonus * 100}% fleet effectiveness`;
+            if (ship.carrierBonus) tooltipText += `\n\nCarrier Bonus: +${ship.carrierBonus} virtual fighters`;
+            if (ship.miningBonus) {
+                tooltipText += `\n\nMining: ${Object.entries(ship.miningBonus).map(([r, a]) => `${a} ${r}/s`).join(', ')}`;
+            }
+            
+            const div = document.createElement('div');
+            div.className = 'ship-item tooltip';
+            div.setAttribute('data-ship', key);
+            div.innerHTML = `
+                <h3>${ship.name}</h3>
+                <p>${ship.description}</p>
+                <p>Power: ${ship.power} | Owned: <span class="ship-count" data-ship-count="${key}">${gameState.ships[key]}</span></p>
+                <p>Cost: ${Object.entries(ship.cost).map(([r, a]) => `${r.charAt(0).toUpperCase() + r.slice(1)}: ${a}`).join(', ')}</p>
+                <div class="button-group">
+                    <button onclick="buildShip('${key}')" class="ship-btn-${key}" ${!canBuild ? 'disabled' : ''}>Build x1</button>
+                    <button onclick="bulkBuildShip('${key}', 10)" class="bulk-btn ship-btn-${key}-10" ${!canBuild ? 'disabled' : ''}>x10</button>
+                    <button onclick="bulkBuildShip('${key}', 100)" class="bulk-btn ship-btn-${key}-100" ${!canBuild ? 'disabled' : ''}>x100</button>
+                </div>
+                ${gameSettings.showTooltips ? `<span class="tooltiptext">${tooltipText.replace(/\n/g, '<br>')}</span>` : ''}
+            `;
+            shipsList.appendChild(div);
+        }
+        needsShipsRebuild = false;
+    } else {
+        // Just update the values without rebuilding
+        for (const [key, ship] of Object.entries(ships)) {
+            if (!meetsRequirements(ship.requires)) continue;
+            
+            const existingItem = shipsList.querySelector(`[data-ship="${key}"]`);
+            if (!existingItem) {
+                needsShipsRebuild = true;
+                continue;
+            }
+            
+            // Update count
+            const countSpan = existingItem.querySelector(`[data-ship-count="${key}"]`);
+            if (countSpan) {
+                countSpan.textContent = gameState.ships[key];
+            }
+            
+            // Update button states
+            const canBuild = canAfford(ship.cost) && gameState.buildings.shipyard > 0;
+            const buttons = [
+                existingItem.querySelector(`.ship-btn-${key}`),
+                existingItem.querySelector(`.ship-btn-${key}-10`),
+                existingItem.querySelector(`.ship-btn-${key}-100`)
+            ];
+            buttons.forEach(btn => {
+                if (btn) {
+                    btn.disabled = !canBuild;
+                }
+            });
+        }
     }
     
     // Update fleet display
