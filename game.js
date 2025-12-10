@@ -1389,6 +1389,12 @@ function getBuildingCost(buildingKey) {
     const count = gameState.buildings[buildingKey];
     const cost = {};
     
+    // Safety check
+    if (!building || !building.baseCost) {
+        console.error(`Invalid building or missing baseCost: ${buildingKey}`);
+        return { credits: DEFAULT_FIRST_BUILDING_COST };
+    }
+    
     // First building of each type costs credits only
     if (count === 0) {
         const creditCost = building.baseCost.credits || DEFAULT_FIRST_BUILDING_COST;
