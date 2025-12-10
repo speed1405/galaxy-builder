@@ -86,17 +86,33 @@ const gameState = {
         advancedWeaponry: false,
         nanoTechnology: false,
         quantumPhysics: false,
+        // Core Technologies (New)
+        cryogenics: false,
+        gravitonBeams: false,
+        artificialIntelligence: false,
+        antimatterReactor: false,
+        temporalPhysics: false,
         // Military Specialization
         plasmaCannonsII: false,
         plasmaCannonsIII: false,
         tacticalSystems: false,
+        armorPlating: false,
+        kineticBarriers: false,
+        pointDefense: false,
+        battleComputers: false,
         // Economy Specialization
         advancedMining: false,
         fusionPower: false,
         galacticTrade: false,
+        matterReplication: false,
+        automatedFactories: false,
+        quantumBanking: false,
         // Science Specialization
         researchNetwork: false,
         quantumComputing: false,
+        neuralInterface: false,
+        dataArchives: false,
+        theoreticalPhysics: false,
         // Mega-Projects
         dysonSphere: false,
         galaxyNetwork: false,
@@ -362,6 +378,37 @@ const research = {
         cost: { research: 500 },
         requires: 'warpDrive'
     },
+    // Core Technologies (New)
+    cryogenics: {
+        name: 'Cryogenics',
+        description: 'Freeze and preserve resources (+25% resource storage)',
+        cost: { research: 80 },
+        requires: 'energyEfficiency'
+    },
+    gravitonBeams: {
+        name: 'Graviton Beams',
+        description: 'Manipulate gravity for construction (+15% building efficiency)',
+        cost: { research: 120 },
+        requires: 'ionDrive'
+    },
+    artificialIntelligence: {
+        name: 'Artificial Intelligence',
+        description: 'AI assistants improve all operations (+20% all production)',
+        cost: { research: 250 },
+        requires: 'quantumPhysics'
+    },
+    antimatterReactor: {
+        name: 'Antimatter Reactor',
+        description: 'Harness antimatter for massive power (+100% energy)',
+        cost: { research: 350, energy: 2000, credits: 3000 },
+        requires: 'quantumPhysics'
+    },
+    temporalPhysics: {
+        name: 'Temporal Physics',
+        description: 'Manipulate time itself (+50% production speed)',
+        cost: { research: 600, metal: 5000, energy: 5000 },
+        requires: 'artificialIntelligence'
+    },
     // Military Specialization
     plasmaCannonsII: {
         name: 'Plasma Cannons II',
@@ -382,6 +429,34 @@ const research = {
         description: 'Advanced combat formations (+25% fleet power)',
         cost: { research: 250 },
         requires: 'advancedWeaponry',
+        category: 'military'
+    },
+    armorPlating: {
+        name: 'Armor Plating',
+        description: 'Reinforced hull armor (+30% ship durability)',
+        cost: { research: 150 },
+        requires: 'advancedMaterials',
+        category: 'military'
+    },
+    kineticBarriers: {
+        name: 'Kinetic Barriers',
+        description: 'Advanced shield systems (+40% defense)',
+        cost: { research: 220 },
+        requires: 'shieldTech',
+        category: 'military'
+    },
+    pointDefense: {
+        name: 'Point Defense',
+        description: 'Automated defense turrets (+20% combat effectiveness)',
+        cost: { research: 280 },
+        requires: 'tacticalSystems',
+        category: 'military'
+    },
+    battleComputers: {
+        name: 'Battle Computers',
+        description: 'AI-controlled targeting (+35% accuracy and damage)',
+        cost: { research: 400 },
+        requires: 'artificialIntelligence',
         category: 'military'
     },
     // Economy Specialization
@@ -406,6 +481,27 @@ const research = {
         requires: 'warpDrive',
         category: 'economy'
     },
+    matterReplication: {
+        name: 'Matter Replication',
+        description: 'Create matter from energy (+60% metal production)',
+        cost: { research: 320 },
+        requires: 'nanoTechnology',
+        category: 'economy'
+    },
+    automatedFactories: {
+        name: 'Automated Factories',
+        description: 'Self-operating production (+40% all resource generation)',
+        cost: { research: 380 },
+        requires: 'advancedMining',
+        category: 'economy'
+    },
+    quantumBanking: {
+        name: 'Quantum Banking',
+        description: 'Secure quantum vaults (+5% interest on stored credits)',
+        cost: { research: 280, credits: 5000 },
+        requires: 'galacticTrade',
+        category: 'economy'
+    },
     // Science Specialization
     researchNetwork: {
         name: 'Research Network',
@@ -419,6 +515,27 @@ const research = {
         description: 'Process data faster (+75% research)',
         cost: { research: 350 },
         requires: 'quantumPhysics',
+        category: 'science'
+    },
+    neuralInterface: {
+        name: 'Neural Interface',
+        description: 'Direct mind-machine connection (+30% research efficiency)',
+        cost: { research: 240 },
+        requires: 'researchNetwork',
+        category: 'science'
+    },
+    dataArchives: {
+        name: 'Data Archives',
+        description: 'Preserve all knowledge (+25% research from all sources)',
+        cost: { research: 300 },
+        requires: 'neuralInterface',
+        category: 'science'
+    },
+    theoreticalPhysics: {
+        name: 'Theoretical Physics',
+        description: 'Unlock universe secrets (+100% research speed)',
+        cost: { research: 500 },
+        requires: 'quantumComputing',
         category: 'science'
     },
     // Mega-Projects
