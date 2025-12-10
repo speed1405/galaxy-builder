@@ -1370,12 +1370,21 @@ function getBuildingCost(buildingKey) {
     // First building of each type costs credits only
     if (count === 0) {
         // Only charge credits for the first building
-        if (building.baseCost.credits !== undefined) {
-            cost.credits = building.baseCost.credits;
-        } else {
-            // If no credit cost defined, use a small default
-            cost.credits = 10;
+        let creditCost = building.baseCost.credits || 10;
+        
+        // Apply prestige cost reduction to first building
+        const costReductionLevel = gameState.prestige.upgrades.costReduction;
+        if (costReductionLevel > 0) {
+            const reduction = 1 - (costReductionLevel * 0.05);
+            creditCost = Math.floor(creditCost * reduction);
         }
+        
+        // Apply universal constructor to first building
+        if (gameState.research.universalConstructor) {
+            creditCost = Math.floor(creditCost * 0.5);
+        }
+        
+        cost.credits = creditCost;
         return cost;
     }
     
