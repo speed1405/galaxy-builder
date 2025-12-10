@@ -1367,6 +1367,18 @@ function getBuildingCost(buildingKey) {
     const count = gameState.buildings[buildingKey];
     const cost = {};
     
+    // First building of each type costs credits only
+    if (count === 0) {
+        // Only charge credits for the first building
+        if (building.baseCost.credits !== undefined) {
+            cost.credits = building.baseCost.credits;
+        } else {
+            // If no credit cost defined, use a small default
+            cost.credits = 10;
+        }
+        return cost;
+    }
+    
     for (const [resource, amount] of Object.entries(building.baseCost)) {
         let finalCost = Math.floor(amount * Math.pow(building.costMultiplier, count));
         
