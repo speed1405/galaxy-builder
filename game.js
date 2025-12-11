@@ -1840,6 +1840,17 @@ function exploreSector() {
     
     gameState.exploration.sectorsExplored++;
     
+    // Base exploration rewards - always gain some research from exploring
+    const baseResearch = 10 + (gameState.exploration.sectorsExplored * 2);
+    gameState.resources.research += baseResearch;
+    
+    // Bonus research for discovering Ancient Ruins
+    if (sectorType.name === 'Ancient Ruins') {
+        const bonusResearch = 25 + (gameState.exploration.sectorsExplored * 5);
+        gameState.resources.research += bonusResearch;
+        addCombatLog(`Ancient technology discovered! +${bonusResearch + baseResearch} research!`, 'discovery');
+    }
+    
     // Random event chance
     if (Math.random() < 0.3) {
         const event = randomEvents[Math.floor(Math.random() * randomEvents.length)];
@@ -1852,7 +1863,7 @@ function exploreSector() {
     // Chance to discover resource node
     discoverResourceNode();
     
-    addCombatLog(`Explored: ${gameState.exploration.sectors[sectorId].name}`, 'victory');
+    addCombatLog(`Explored: ${gameState.exploration.sectors[sectorId].name} (+${baseResearch} research)`, 'victory');
     updateUI();
 }
 
@@ -1908,7 +1919,7 @@ function sendExpedition() {
             metal: 1000 + Math.floor(fleetPower * 2),
             energy: 800 + Math.floor(fleetPower * 1.5),
             credits: 2000 + Math.floor(fleetPower * 3),
-            research: Math.floor(fleetPower * 0.5)
+            research: 50 + Math.floor(fleetPower * 1)  // Increased research rewards
         }
     };
     
@@ -1928,7 +1939,8 @@ function checkExpeditions() {
                 gameState.resources[resource] += amount;
             }
             completedExpeditions.push(i);
-            addCombatLog('Expedition returned with resources!', 'victory');
+            const researchGained = expedition.reward.research || 0;
+            addCombatLog(`Expedition returned! Gained research: ${researchGained}`, 'victory');
         }
     }
     
