@@ -3991,7 +3991,7 @@ function switchTab(tabName) {
 }
 
 // Documentation Tab Switching
-function showDocTab(tabName) {
+function showDocTab(tabName, event) {
     // Hide all doc tab contents
     const docTabs = document.querySelectorAll('.doc-tab-content');
     docTabs.forEach(tab => tab.classList.remove('active'));
@@ -4007,7 +4007,17 @@ function showDocTab(tabName) {
     }
     
     // Highlight active button
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    } else {
+        // Fallback: find and activate the button by tab name
+        const tabButtons = document.querySelectorAll('.doc-tab-btn');
+        tabButtons.forEach(btn => {
+            if (btn.textContent.toLowerCase().includes(tabName)) {
+                btn.classList.add('active');
+            }
+        });
+    }
 }
 
 // Audio System
@@ -4198,6 +4208,7 @@ const audioSystem = {
         
         // Alert/notification sound
         this.sounds.alert = () => {
+            // First beep
             const oscillator = this.context.createOscillator();
             const gainNode = this.context.createGain();
             
@@ -4211,18 +4222,19 @@ const audioSystem = {
             oscillator.start(this.context.currentTime);
             oscillator.stop(this.context.currentTime + 0.15);
             
-            // Second beep
-            setTimeout(() => {
-                const osc2 = this.context.createOscillator();
-                const gain2 = this.context.createGain();
-                osc2.connect(gain2);
-                gain2.connect(this.masterGain);
-                osc2.frequency.value = 880;
-                gain2.gain.setValueAtTime(0.1, this.context.currentTime);
-                gain2.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.15);
-                osc2.start(this.context.currentTime);
-                osc2.stop(this.context.currentTime + 0.15);
-            }, 150);
+            // Second beep using Web Audio API scheduler for precise timing
+            const osc2 = this.context.createOscillator();
+            const gain2 = this.context.createGain();
+            osc2.connect(gain2);
+            gain2.connect(this.masterGain);
+            osc2.frequency.value = 880;
+            
+            // Start second beep 0.15 seconds after first beep
+            const secondBeepTime = this.context.currentTime + 0.15;
+            gain2.gain.setValueAtTime(0.1, secondBeepTime);
+            gain2.gain.exponentialRampToValueAtTime(0.01, secondBeepTime + 0.15);
+            osc2.start(secondBeepTime);
+            osc2.stop(secondBeepTime + 0.15);
         };
     },
     
