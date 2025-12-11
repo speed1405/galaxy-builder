@@ -1784,16 +1784,29 @@ const randomEvents = [
     { name: 'Abandoned Station', reward: { metal: 800, energy: 800, credits: 1500 } }
 ];
 
+// Helper functions to get exploration costs
+function getExploreSectorCost() {
+    return {
+        energy: 500 + (gameState.exploration.sectorsExplored * 100),
+        credits: 1000 + (gameState.exploration.sectorsExplored * 200)
+    };
+}
+
+function getSendExpeditionCost() {
+    return { energy: 1000, credits: 2000 };
+}
+
+function getEstablishColonyCost() {
+    return { metal: 5000, energy: 3000, credits: 10000 };
+}
+
 function exploreSector() {
     if (!gameState.research.warpDrive) {
         addCombatLog('Warp Drive required to explore new sectors!', 'defeat');
         return;
     }
     
-    const cost = {
-        energy: 500 + (gameState.exploration.sectorsExplored * 100),
-        credits: 1000 + (gameState.exploration.sectorsExplored * 200)
-    };
+    const cost = getExploreSectorCost();
     
     if (!canAfford(cost)) {
         addCombatLog('Not enough resources to explore!', 'defeat');
@@ -1867,7 +1880,7 @@ function sendExpedition() {
         return;
     }
     
-    const cost = { energy: 1000, credits: 2000 };
+    const cost = getSendExpeditionCost();
     
     if (!canAfford(cost)) {
         addCombatLog('Not enough resources for expedition!', 'defeat');
@@ -1930,11 +1943,7 @@ function establishColony() {
         return;
     }
     
-    const cost = {
-        metal: 5000,
-        energy: 3000,
-        credits: 10000
-    };
+    const cost = getEstablishColonyCost();
     
     if (!canAfford(cost)) {
         addCombatLog('Not enough resources to establish colony!', 'defeat');
@@ -2343,21 +2352,18 @@ function updateUI() {
     const establishColonyBtn = document.getElementById('establish-colony-btn');
     
     if (exploreSectorBtn) {
-        const exploreCost = {
-            energy: 500 + (gameState.exploration.sectorsExplored * 100),
-            credits: 1000 + (gameState.exploration.sectorsExplored * 200)
-        };
+        const exploreCost = getExploreSectorCost();
         exploreSectorBtn.disabled = !gameState.research.warpDrive || !canAfford(exploreCost);
     }
     
     if (sendExpeditionBtn) {
-        const expeditionCost = { energy: 1000, credits: 2000 };
+        const expeditionCost = getSendExpeditionCost();
         const fleetPower = calculateFleetPower();
         sendExpeditionBtn.disabled = !gameState.research.warpDrive || fleetPower < 100 || !canAfford(expeditionCost);
     }
     
     if (establishColonyBtn) {
-        const colonyCost = { metal: 5000, energy: 3000, credits: 10000 };
+        const colonyCost = getEstablishColonyCost();
         establishColonyBtn.disabled = gameState.ships.colonyShip < 1 || 
                                       gameState.exploration.sectorsExplored < 5 || 
                                       !canAfford(colonyCost);
