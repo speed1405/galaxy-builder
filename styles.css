@@ -1361,3 +1361,118 @@ body.theme-green .resource-name {
     background: linear-gradient(135deg, #ff8888 0%, #ff0000 100%);
     transform: translateY(-2px);
 }
+
+/* Documentation Panel Styles */
+.documentation-panel {
+    margin-bottom: 20px;
+}
+
+.documentation-content {
+    padding: 15px;
+}
+
+.doc-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.doc-tab-btn {
+    background: rgba(0, 217, 255, 0.1);
+    border: 1px solid #00d9ff;
+    color: #00d9ff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.doc-tab-btn:hover {
+    background: rgba(0, 217, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.doc-tab-btn.active {
+    background: linear-gradient(135deg, #00d9ff 0%, #0088ff 100%);
+    color: white;
+    font-weight: bold;
+}
+
+.doc-tab-content {
+    display: none;
+    animation: fadeIn 0.3s;
+}
+
+.doc-tab-content.active {
+    display: block;
+}
+
+.doc-tab-content h3 {
+    color: #00d9ff;
+    margin-bottom: 20px;
+    font-size: 20px;
+    border-bottom: 2px solid rgba(0, 217, 255, 0.3);
+    padding-bottom: 10px;
+}
+
+.doc-tab-content h4 {
+    color: #a8dadc;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.tutorial-section, .guide-section, .faq-item, .changelog-entry {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #00d9ff;
+}
+
+.tutorial-section ol, .guide-section ul, .faq-item p, .changelog-entry ul {
+    margin: 10px 0;
+    padding-left: 20px;
+    line-height: 1.8;
+}
+
+.tutorial-section li, .guide-section li, .changelog-entry li {
+    margin: 8px 0;
+    color: #e4e4e4;
+}
+
+.tutorial-section strong, .guide-section strong {
+    color: #00d9ff;
+}
+
+.faq-item h4 {
+    color: #ffd700;
+    margin-bottom: 8px;
+}
+
+.faq-item p {
+    color: #e4e4e4;
+    margin: 0;
+}
+
+.faq-item kbd {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: monospace;
+    color: #00d9ff;
+}
+
+.changelog-entry h4 {
+    color: #00ff88;
+    margin-bottom: 5px;
+}
+
+.changelog-date {
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
