@@ -113,7 +113,19 @@ Reset your progress for permanent bonuses!
 - **Confirmation Dialogs**: Optional confirmations for resets and bulk actions
 - **Offline Progress**: Earn resources while away (max 4 hours)
 - **Theme Selection**: Choose from Dark, Light, Classic Purple, or Matrix Green themes
-- **Audio Settings**: Enable/disable sound effects and music with volume control
+- **Audio Settings**: Enable/disable sound effects and background music with volume control
+  - UI sound effects (clicks, builds, research)
+  - Combat sounds (attacks, victories, defeats)
+  - Achievement fanfares
+  - Alert notifications
+  - Ambient background music
+
+### 📚 Documentation & Help
+Comprehensive in-game documentation system:
+- **Tutorial**: Step-by-step guide for new players
+- **FAQ**: Answers to frequently asked questions
+- **Strategy Guide**: Tips for early game, mid game, combat, prestige, and advanced play
+- **Patch Notes**: Complete changelog of all updates and features
 
 ### 📊 Statistics Dashboard
 Track your galactic empire's progress with comprehensive statistics:
@@ -209,7 +221,8 @@ See [suggestions.md](suggestions.md) for detailed future development ideas. Many
 - ✅ **NEW: Theme Options** - Choose from 4 different visual themes
 - ✅ **NEW: Enhanced Enemies** - Fight against 13 diverse enemy types with unique abilities
 - ✅ **NEW: Tooltips** - Hover over items for detailed information
-- ✅ **NEW: Audio Settings** - Framework for sound effects and music
+- ✅ **NEW: Audio System** - Complete sound effects and background music
+- ✅ **NEW: Documentation System** - In-game tutorials, FAQ, strategy guides, and patch notes
 
 ## 🤝 Contributing
 

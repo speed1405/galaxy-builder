@@ -1550,6 +1550,7 @@ function buildBuilding(buildingKey) {
     
     if (!meetsRequirements(building.requires)) {
         addCombatLog('Research requirement not met!', 'defeat');
+        audioSystem.play('alert');
         return;
     }
     
@@ -1557,6 +1558,7 @@ function buildBuilding(buildingKey) {
         deductResources(cost);
         gameState.buildings[buildingKey]++;
         gameState.achievements.stats.totalBuildingsBuilt++;
+        audioSystem.play('build');
         // Trigger rebuilds if this is the first building of this type (may unlock new content)
         if (gameState.buildings[buildingKey] === 1) {
             needsBuildingsRebuild = true;
@@ -1596,6 +1598,7 @@ function researchTech(techKey) {
         gameState.research[techKey] = true;
         gameState.achievements.stats.totalResearchCompleted++;
         addCombatLog(`Researched: ${tech.name}!`, 'victory');
+        audioSystem.play('research');
         // Trigger rebuilds as research may unlock new buildings/ships
         needsBuildingsRebuild = true;
         needsResearchRebuild = true;
@@ -1610,11 +1613,13 @@ function buildShip(shipKey) {
     
     if (!meetsRequirements(ship.requires)) {
         addCombatLog('Research requirement not met!', 'defeat');
+        audioSystem.play('alert');
         return;
     }
     
     if (gameState.buildings.shipyard < 1) {
         addCombatLog('Shipyard required to build ships!', 'defeat');
+        audioSystem.play('alert');
         return;
     }
     
@@ -1637,6 +1642,7 @@ function buildShip(shipKey) {
         deductResources(cost);
         gameState.ships[shipKey]++;
         gameState.achievements.stats.totalShipsBuilt++;
+        audioSystem.play('build');
         // Trigger rebuild if this is the first ship of this type
         if (gameState.ships[shipKey] === 1) {
             needsShipsRebuild = true;
@@ -1652,8 +1658,11 @@ function attackEnemy(enemyIndex) {
     
     if (fleetPower === 0) {
         addCombatLog('No ships available for combat!', 'defeat');
+        audioSystem.play('alert');
         return;
     }
+    
+    audioSystem.play('attack');
     
     if (fleetPower >= enemy.power) {
         // Victory
@@ -1672,6 +1681,7 @@ function attackEnemy(enemyIndex) {
         }
         
         addCombatLog(`Victory against ${enemy.name}! Gained rewards.`, 'victory');
+        audioSystem.play('victory');
     } else {
         // Defeat - lose some ships
         for (const shipKey in gameState.ships) {
@@ -1679,6 +1689,7 @@ function attackEnemy(enemyIndex) {
             gameState.ships[shipKey] = Math.max(0, gameState.ships[shipKey] - losses);
         }
         addCombatLog(`Defeated by ${enemy.name}! Lost 10% of fleet.`, 'defeat');
+        audioSystem.play('defeat');
     }
     
     updateUI();
@@ -2474,6 +2485,8 @@ function unlockAchievement(key) {
     if (gameSettings.showNotifications) {
         showNotification(`🏆 Achievement Unlocked: ${achievement.name}!`, 'achievement');
     }
+    
+    audioSystem.play('achievement');
     
     updateAchievementsDisplay();
 }
@@ -3843,6 +3856,21 @@ function applySetting(settingName, value) {
         if (volumeDisplay) {
             volumeDisplay.textContent = `${value}%`;
         }
+        audioSystem.updateVolume();
+    }
+    
+    // Handle music toggle
+    if (settingName === 'musicEnabled') {
+        if (value) {
+            audioSystem.startMusic();
+        } else {
+            audioSystem.stopMusic();
+        }
+    }
+    
+    // Handle sound effects initialization
+    if (settingName === 'soundEffectsEnabled' && value) {
+        audioSystem.init();
     }
 }
 
@@ -3919,6 +3947,8 @@ function handleKeyboardShortcut(event) {
 
 // Tab switching functionality
 function switchTab(tabName) {
+    audioSystem.play('click');
+    
     // Hide all tab contents
     const tabContents = document.querySelectorAll('.tab-content');
     tabContents.forEach(content => {
@@ -3960,6 +3990,321 @@ function switchTab(tabName) {
     saveSettings();
 }
 
+// Documentation Tab Switching
+function showDocTab(tabName) {
+    // Hide all doc tab contents
+    const docTabs = document.querySelectorAll('.doc-tab-content');
+    docTabs.forEach(tab => tab.classList.remove('active'));
+    
+    // Remove active class from all doc tab buttons
+    const docButtons = document.querySelectorAll('.doc-tab-btn');
+    docButtons.forEach(btn => btn.classList.remove('active'));
+    
+    // Show selected doc tab
+    const selectedTab = document.getElementById(`doc-${tabName}`);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
+    
+    // Highlight active button
+    event.target.classList.add('active');
+}
+
+// Audio System
+const audioSystem = {
+    context: null,
+    masterGain: null,
+    sounds: {},
+    music: {
+        current: null,
+        tracks: {}
+    },
+    
+    // Initialize the audio system
+    init() {
+        if (!this.context) {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.context = new AudioContext();
+                this.masterGain = this.context.createGain();
+                this.masterGain.connect(this.context.destination);
+                this.updateVolume();
+                
+                // Generate sound effects
+                this.generateSounds();
+            } catch (e) {
+                console.warn('Web Audio API not supported:', e);
+            }
+        }
+    },
+    
+    // Update master volume
+    updateVolume() {
+        if (this.masterGain) {
+            this.masterGain.gain.value = gameSettings.masterVolume / 100;
+        }
+    },
+    
+    // Generate procedural sound effects
+    generateSounds() {
+        if (!this.context) return;
+        
+        // UI Click sound
+        this.sounds.click = () => {
+            const oscillator = this.context.createOscillator();
+            const gainNode = this.context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            oscillator.frequency.value = 800;
+            gainNode.gain.setValueAtTime(0.1, this.context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.1);
+            
+            oscillator.start(this.context.currentTime);
+            oscillator.stop(this.context.currentTime + 0.1);
+        };
+        
+        // Building constructed sound
+        this.sounds.build = () => {
+            const oscillator = this.context.createOscillator();
+            const gainNode = this.context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            oscillator.frequency.setValueAtTime(300, this.context.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(600, this.context.currentTime + 0.2);
+            gainNode.gain.setValueAtTime(0.2, this.context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.2);
+            
+            oscillator.start(this.context.currentTime);
+            oscillator.stop(this.context.currentTime + 0.2);
+        };
+        
+        // Research completed sound
+        this.sounds.research = () => {
+            const oscillator = this.context.createOscillator();
+            const gainNode = this.context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            oscillator.frequency.setValueAtTime(400, this.context.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(800, this.context.currentTime + 0.15);
+            oscillator.frequency.exponentialRampToValueAtTime(1200, this.context.currentTime + 0.3);
+            gainNode.gain.setValueAtTime(0.15, this.context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.3);
+            
+            oscillator.start(this.context.currentTime);
+            oscillator.stop(this.context.currentTime + 0.3);
+        };
+        
+        // Combat attack sound
+        this.sounds.attack = () => {
+            const oscillator = this.context.createOscillator();
+            const gainNode = this.context.createGain();
+            const noise = this.context.createBufferSource();
+            
+            // Create noise buffer for explosion effect
+            const bufferSize = this.context.sampleRate * 0.3;
+            const buffer = this.context.createBuffer(1, bufferSize, this.context.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            noise.buffer = buffer;
+            
+            oscillator.connect(gainNode);
+            noise.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(150, this.context.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(50, this.context.currentTime + 0.3);
+            gainNode.gain.setValueAtTime(0.15, this.context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.3);
+            
+            oscillator.start(this.context.currentTime);
+            noise.start(this.context.currentTime);
+            oscillator.stop(this.context.currentTime + 0.3);
+            noise.stop(this.context.currentTime + 0.3);
+        };
+        
+        // Victory sound
+        this.sounds.victory = () => {
+            const oscillator1 = this.context.createOscillator();
+            const oscillator2 = this.context.createOscillator();
+            const gainNode = this.context.createGain();
+            
+            oscillator1.connect(gainNode);
+            oscillator2.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            oscillator1.frequency.setValueAtTime(523.25, this.context.currentTime); // C5
+            oscillator1.frequency.setValueAtTime(659.25, this.context.currentTime + 0.1); // E5
+            oscillator1.frequency.setValueAtTime(783.99, this.context.currentTime + 0.2); // G5
+            
+            oscillator2.frequency.setValueAtTime(261.63, this.context.currentTime); // C4
+            oscillator2.frequency.setValueAtTime(329.63, this.context.currentTime + 0.1); // E4
+            oscillator2.frequency.setValueAtTime(392.00, this.context.currentTime + 0.2); // G4
+            
+            gainNode.gain.setValueAtTime(0.15, this.context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.4);
+            
+            oscillator1.start(this.context.currentTime);
+            oscillator2.start(this.context.currentTime);
+            oscillator1.stop(this.context.currentTime + 0.4);
+            oscillator2.stop(this.context.currentTime + 0.4);
+        };
+        
+        // Defeat sound
+        this.sounds.defeat = () => {
+            const oscillator = this.context.createOscillator();
+            const gainNode = this.context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            oscillator.frequency.setValueAtTime(400, this.context.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(100, this.context.currentTime + 0.4);
+            gainNode.gain.setValueAtTime(0.2, this.context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.4);
+            
+            oscillator.start(this.context.currentTime);
+            oscillator.stop(this.context.currentTime + 0.4);
+        };
+        
+        // Achievement unlocked sound
+        this.sounds.achievement = () => {
+            const oscillator = this.context.createOscillator();
+            const gainNode = this.context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, this.context.currentTime);
+            oscillator.frequency.setValueAtTime(1174.66, this.context.currentTime + 0.1);
+            oscillator.frequency.setValueAtTime(1396.91, this.context.currentTime + 0.2);
+            oscillator.frequency.setValueAtTime(1760, this.context.currentTime + 0.3);
+            
+            gainNode.gain.setValueAtTime(0.15, this.context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.5);
+            
+            oscillator.start(this.context.currentTime);
+            oscillator.stop(this.context.currentTime + 0.5);
+        };
+        
+        // Alert/notification sound
+        this.sounds.alert = () => {
+            const oscillator = this.context.createOscillator();
+            const gainNode = this.context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            oscillator.frequency.value = 880;
+            gainNode.gain.setValueAtTime(0.1, this.context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.15);
+            
+            oscillator.start(this.context.currentTime);
+            oscillator.stop(this.context.currentTime + 0.15);
+            
+            // Second beep
+            setTimeout(() => {
+                const osc2 = this.context.createOscillator();
+                const gain2 = this.context.createGain();
+                osc2.connect(gain2);
+                gain2.connect(this.masterGain);
+                osc2.frequency.value = 880;
+                gain2.gain.setValueAtTime(0.1, this.context.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.15);
+                osc2.start(this.context.currentTime);
+                osc2.stop(this.context.currentTime + 0.15);
+            }, 150);
+        };
+    },
+    
+    // Start background music
+    startMusic() {
+        if (!this.context || !gameSettings.musicEnabled) return;
+        
+        this.stopMusic();
+        
+        // Create ambient background music
+        const now = this.context.currentTime;
+        
+        // Bass drone
+        const bass = this.context.createOscillator();
+        const bassGain = this.context.createGain();
+        bass.type = 'sine';
+        bass.frequency.value = 55; // A1
+        bassGain.gain.value = 0.03;
+        bass.connect(bassGain);
+        bassGain.connect(this.masterGain);
+        bass.start(now);
+        
+        // Pad harmony
+        const pad1 = this.context.createOscillator();
+        const pad1Gain = this.context.createGain();
+        pad1.type = 'triangle';
+        pad1.frequency.value = 220; // A3
+        pad1Gain.gain.value = 0.02;
+        pad1.connect(pad1Gain);
+        pad1Gain.connect(this.masterGain);
+        pad1.start(now);
+        
+        const pad2 = this.context.createOscillator();
+        const pad2Gain = this.context.createGain();
+        pad2.type = 'triangle';
+        pad2.frequency.value = 329.63; // E4
+        pad2Gain.gain.value = 0.02;
+        pad2.connect(pad2Gain);
+        pad2Gain.connect(this.masterGain);
+        pad2.start(now);
+        
+        this.music.current = { bass, pad1, pad2, bassGain, pad1Gain, pad2Gain };
+    },
+    
+    // Stop background music
+    stopMusic() {
+        if (this.music.current) {
+            const { bass, pad1, pad2 } = this.music.current;
+            const now = this.context.currentTime;
+            
+            try {
+                bass.stop(now);
+                pad1.stop(now);
+                pad2.stop(now);
+            } catch (e) {
+                // Oscillator may already be stopped
+            }
+            
+            this.music.current = null;
+        }
+    },
+    
+    // Play a sound effect
+    play(soundName) {
+        if (!gameSettings.soundEffectsEnabled || !this.context) return;
+        
+        // Initialize audio context on first user interaction
+        if (this.context.state === 'suspended') {
+            this.context.resume();
+        }
+        
+        const sound = this.sounds[soundName];
+        if (sound) {
+            try {
+                sound();
+            } catch (e) {
+                console.warn('Error playing sound:', e);
+            }
+        }
+    }
+};
+
 // Initialize game
 function init() {
     // Load settings first
@@ -3995,6 +4340,14 @@ function init() {
     
     // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboardShortcut);
+    
+    // Initialize audio system
+    audioSystem.init();
+    
+    // Start music if enabled
+    if (gameSettings.musicEnabled) {
+        audioSystem.startMusic();
+    }
     
     // Restore the last active tab
     if (gameSettings.currentTab) {

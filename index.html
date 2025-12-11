@@ -252,6 +252,276 @@
                 <h2>🎉 Active Event</h2>
                 <div id="seasonal-event-display" class="seasonal-event-content"></div>
             </section>
+
+            <!-- Documentation Section -->
+            <section class="panel documentation-panel">
+                <h2>📚 Documentation & Help</h2>
+                <div class="documentation-content">
+                    <div class="doc-tabs">
+                        <button onclick="showDocTab('tutorial')" class="doc-tab-btn active">📖 Tutorial</button>
+                        <button onclick="showDocTab('faq')" class="doc-tab-btn">❓ FAQ</button>
+                        <button onclick="showDocTab('guide')" class="doc-tab-btn">📋 Strategy Guide</button>
+                        <button onclick="showDocTab('changelog')" class="doc-tab-btn">📝 Patch Notes</button>
+                    </div>
+
+                    <!-- Tutorial Tab -->
+                    <div id="doc-tutorial" class="doc-tab-content active">
+                        <h3>🎓 How to Play Galaxy Builder</h3>
+                        <div class="tutorial-section">
+                            <h4>🏁 Getting Started</h4>
+                            <ol>
+                                <li><strong>Build Metal Mines</strong> - Your first resource generator</li>
+                                <li><strong>Add Solar Panels</strong> - Energy powers your empire</li>
+                                <li><strong>Research Basic Engineering</strong> - Unlocks advanced buildings</li>
+                                <li><strong>Build Research Labs</strong> - Generate research points faster</li>
+                                <li><strong>Expand Storage</strong> - Build Warehouses to increase resource caps</li>
+                            </ol>
+                        </div>
+
+                        <div class="tutorial-section">
+                            <h4>⚔️ Military & Combat</h4>
+                            <ol>
+                                <li><strong>Build a Shipyard</strong> - Required for ship construction</li>
+                                <li><strong>Construct Ships</strong> - Start with Scouts and Fighters</li>
+                                <li><strong>Attack Enemies</strong> - Gain resources and research points</li>
+                                <li><strong>Enable Auto-Combat</strong> - Automatically engage when safe</li>
+                                <li><strong>Fight Bosses</strong> - Challenge powerful enemies for big rewards</li>
+                            </ol>
+                        </div>
+
+                        <div class="tutorial-section">
+                            <h4>🔭 Exploration</h4>
+                            <ol>
+                                <li><strong>Research Warp Drive</strong> - Unlock exploration capabilities</li>
+                                <li><strong>Explore Sectors</strong> - Discover new areas with bonuses</li>
+                                <li><strong>Claim Territory</strong> - Get permanent production bonuses</li>
+                                <li><strong>Send Expeditions</strong> - Timed missions for rewards</li>
+                                <li><strong>Find Events</strong> - Random discoveries yield special benefits</li>
+                            </ol>
+                        </div>
+
+                        <div class="tutorial-section">
+                            <h4>⭐ Advanced Features</h4>
+                            <ol>
+                                <li><strong>Prestige System</strong> - Reset for Dark Matter and permanent upgrades</li>
+                                <li><strong>Tech Specialization</strong> - Choose Military, Economy, or Science paths</li>
+                                <li><strong>Mega-Projects</strong> - Long-term research with massive benefits</li>
+                                <li><strong>Achievements</strong> - Complete goals for rewards and bonuses</li>
+                                <li><strong>Challenges</strong> - Special objectives for unique rewards</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Tab -->
+                    <div id="doc-faq" class="doc-tab-content">
+                        <h3>❓ Frequently Asked Questions</h3>
+                        
+                        <div class="faq-item">
+                            <h4>Q: How do I save my game?</h4>
+                            <p>A: The game auto-saves every 30 seconds by default. You can also manually save by clicking the "💾 Save Game" button or pressing <kbd>Ctrl+S</kbd>. Adjust auto-save settings in the Settings menu.</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h4>Q: What is the Prestige System?</h4>
+                            <p>A: Prestige allows you to reset your progress in exchange for Dark Matter, a special currency used for permanent upgrades. You can prestige from the Advanced tab. Higher milestones yield more Dark Matter!</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h4>Q: How does offline progress work?</h4>
+                            <p>A: When you return after being away, the game calculates up to 4 hours of resource production. Combat and exploration don't progress offline. You can disable this in Settings if preferred.</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h4>Q: Why are my resources capped?</h4>
+                            <p>A: Resources have storage limits. Build Warehouses to increase capacity (+5,000 per warehouse). Advanced technologies also increase caps.</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h4>Q: How do I unlock new ship types?</h4>
+                            <p>A: Research technologies to unlock better ships. Each ship requires specific tech: Ion Drive for Corvettes, Plasma Cannons for Destroyers, Shield Tech for Cruisers, and Advanced Weaponry for Battleships.</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h4>Q: What are the different enemy types?</h4>
+                            <p>A: Enemies range from normal (Space Pirates, Rogue Drones) to elite (Mercenary Squadron, Crystalline Horde) to bosses (Void Leviathan, Ancient Guardian). Each has unique abilities and rewards.</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h4>Q: How do specialization paths work?</h4>
+                            <p>A: After researching core technologies, you can specialize in Military (combat bonuses), Economy (production bonuses), or Science (research bonuses). Choose based on your playstyle!</p>
+                        </div>
+
+                        <div class="faq-item">
+                            <h4>Q: What are Mega-Projects?</h4>
+                            <p>A: Mega-Projects are expensive, long-term research goals that provide massive benefits: Dyson Sphere (energy), Galaxy Network (all production +200%), and Universal Constructor (costs -50%).</p>
+                        </div>
+                    </div>
+
+                    <!-- Strategy Guide Tab -->
+                    <div id="doc-guide" class="doc-tab-content">
+                        <h3>📋 Strategy Tips & Guides</h3>
+
+                        <div class="guide-section">
+                            <h4>🎯 Early Game Strategy (Pre-Warp Age)</h4>
+                            <ul>
+                                <li><strong>Balance Resources</strong> - Build 2-3 Metal Mines and Solar Panels each</li>
+                                <li><strong>Rush Basic Engineering</strong> - Unlocks crucial buildings and ships</li>
+                                <li><strong>Build One Warehouse</strong> - Early cap increase helps growth</li>
+                                <li><strong>Get a Shipyard</strong> - Start building a small fleet (5-10 Scouts)</li>
+                                <li><strong>Fight Weak Enemies</strong> - Space Pirates and Rogue Drones for early resources</li>
+                            </ul>
+                        </div>
+
+                        <div class="guide-section">
+                            <h4>🚀 Mid Game Strategy (Warp Age)</h4>
+                            <ul>
+                                <li><strong>Specialize Tech Path</strong> - Choose based on playstyle (Economy recommended for beginners)</li>
+                                <li><strong>Expand Storage</strong> - Build 3-5 Warehouses total</li>
+                                <li><strong>Diversify Fleet</strong> - Mix of Fighters, Corvettes, and Destroyers</li>
+                                <li><strong>Explore Sectors</strong> - Claim high-value territories (Ancient Ruins, Trade Hubs)</li>
+                                <li><strong>Send Expeditions</strong> - Passive resource generation</li>
+                                <li><strong>Build Advanced Buildings</strong> - Refineries, Banks, Factories</li>
+                            </ul>
+                        </div>
+
+                        <div class="guide-section">
+                            <h4>⚔️ Combat Tips</h4>
+                            <ul>
+                                <li><strong>Check Enemy Power</strong> - Only attack if you have 20%+ more power</li>
+                                <li><strong>Build Diverse Fleets</strong> - Mix ship types for better performance</li>
+                                <li><strong>Enable Auto-Combat</strong> - Saves clicks for weaker enemies</li>
+                                <li><strong>Save for Bosses</strong> - Build up fleet before attempting boss fights</li>
+                                <li><strong>Upgrade Technologies</strong> - Plasma Cannons II & III significantly boost damage</li>
+                            </ul>
+                        </div>
+
+                        <div class="guide-section">
+                            <h4>⭐ Prestige Strategy</h4>
+                            <ul>
+                                <li><strong>First Prestige</strong> - Around 500-1000 enemies defeated for ~10 Dark Matter</li>
+                                <li><strong>Prioritize Production Boost</strong> - Speeds up all future runs</li>
+                                <li><strong>Then Research Speed</strong> - Faster tech unlocks</li>
+                                <li><strong>Cost Reduction</strong> - Makes building cheaper</li>
+                                <li><strong>Combat Power</strong> - For boss-focused playstyle</li>
+                                <li><strong>Complete Milestones</strong> - Big Dark Matter bonuses</li>
+                            </ul>
+                        </div>
+
+                        <div class="guide-section">
+                            <h4>💡 Advanced Tips</h4>
+                            <ul>
+                                <li><strong>Resource Management</strong> - Use Refineries to convert excess metal to energy</li>
+                                <li><strong>Banking Strategy</strong> - Banks generate passive credits (useful for trading)</li>
+                                <li><strong>Achievement Hunting</strong> - Many achievements provide permanent bonuses</li>
+                                <li><strong>Challenge Completion</strong> - Extra Dark Matter from challenges</li>
+                                <li><strong>Keyboard Shortcuts</strong> - Use shortcuts for faster gameplay</li>
+                                <li><strong>Optimize Production</strong> - Match building counts to resource needs</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Patch Notes Tab -->
+                    <div id="doc-changelog" class="doc-tab-content">
+                        <h3>📝 Patch Notes & Changelog</h3>
+
+                        <div class="changelog-entry">
+                            <h4>Version 2.0 - Major Content Update</h4>
+                            <p class="changelog-date">Latest Update</p>
+                            <ul>
+                                <li>✨ <strong>NEW:</strong> Documentation system with tutorials, FAQ, and strategy guides</li>
+                                <li>✨ <strong>NEW:</strong> Audio system with sound effects and background music</li>
+                                <li>🎵 Added dynamic soundtrack that changes based on game state</li>
+                                <li>🔊 Implemented UI sound effects for all actions</li>
+                                <li>⚔️ Added combat sounds for battles, victories, and defeats</li>
+                                <li>🔔 Alert sounds for important events and notifications</li>
+                                <li>🎶 Victory fanfares for achievements and milestones</li>
+                                <li>🎨 Enhanced audio controls with volume slider</li>
+                                <li>📚 Comprehensive help system added to Info tab</li>
+                            </ul>
+                        </div>
+
+                        <div class="changelog-entry">
+                            <h4>Version 1.9 - Polish & Enhancement Update</h4>
+                            <ul>
+                                <li>✅ Statistics Dashboard with production charts</li>
+                                <li>✅ Challenge system with 8 unique challenges</li>
+                                <li>✅ Story mode with branching narrative</li>
+                                <li>✅ 4 visual themes (Dark, Light, Classic, Matrix)</li>
+                                <li>✅ Enhanced tooltips system</li>
+                                <li>✅ 13 diverse enemy types with unique abilities</li>
+                                <li>🔧 Performance optimizations</li>
+                                <li>🐛 Bug fixes and balance improvements</li>
+                            </ul>
+                        </div>
+
+                        <div class="changelog-entry">
+                            <h4>Version 1.8 - Achievements & UI Update</h4>
+                            <ul>
+                                <li>✅ Achievement system with 30+ achievements</li>
+                                <li>✅ Achievement showcase and rewards</li>
+                                <li>✅ Enhanced UI with better organization</li>
+                                <li>✅ Tab navigation improvements</li>
+                                <li>🎯 New achievement categories</li>
+                            </ul>
+                        </div>
+
+                        <div class="changelog-entry">
+                            <h4>Version 1.7 - Exploration Update</h4>
+                            <ul>
+                                <li>✅ Sector exploration system</li>
+                                <li>✅ Territory control mechanics</li>
+                                <li>✅ Expedition missions</li>
+                                <li>✅ Random exploration events</li>
+                                <li>🗺️ Different sector types with unique bonuses</li>
+                            </ul>
+                        </div>
+
+                        <div class="changelog-entry">
+                            <h4>Version 1.6 - Combat Enhancement Update</h4>
+                            <ul>
+                                <li>✅ Enhanced combat system</li>
+                                <li>✅ Boss enemies added</li>
+                                <li>✅ Enemy waves system</li>
+                                <li>✅ Auto-combat toggle</li>
+                                <li>⚔️ More enemy types with abilities</li>
+                            </ul>
+                        </div>
+
+                        <div class="changelog-entry">
+                            <h4>Version 1.5 - Prestige System</h4>
+                            <ul>
+                                <li>✅ Prestige reset mechanism</li>
+                                <li>✅ Dark Matter currency</li>
+                                <li>✅ 5 permanent upgrades</li>
+                                <li>✅ Prestige milestones</li>
+                                <li>⭐ Meta-progression system</li>
+                            </ul>
+                        </div>
+
+                        <div class="changelog-entry">
+                            <h4>Version 1.4 - Technology Expansion</h4>
+                            <ul>
+                                <li>✅ Tech tree with 22+ technologies</li>
+                                <li>✅ Specialization paths (Military/Economy/Science)</li>
+                                <li>✅ Mega-projects</li>
+                                <li>✅ Tiered technology upgrades</li>
+                            </ul>
+                        </div>
+
+                        <div class="changelog-entry">
+                            <h4>Version 1.0-1.3 - Core Game</h4>
+                            <ul>
+                                <li>✅ Base resource system</li>
+                                <li>✅ Building construction</li>
+                                <li>✅ Ship building</li>
+                                <li>✅ Basic combat</li>
+                                <li>✅ Research system</li>
+                                <li>✅ Save/load functionality</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
                 </div>
             </div>
         </div>
