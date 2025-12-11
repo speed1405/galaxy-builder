@@ -4009,14 +4009,6 @@ function showDocTab(tabName, event) {
     // Highlight active button
     if (event && event.target) {
         event.target.classList.add('active');
-    } else {
-        // Fallback: find and activate the button by tab name
-        const tabButtons = document.querySelectorAll('.doc-tab-btn');
-        tabButtons.forEach(btn => {
-            if (btn.textContent.toLowerCase().includes(tabName)) {
-                btn.classList.add('active');
-            }
-        });
     }
 }
 
@@ -4223,14 +4215,14 @@ const audioSystem = {
             oscillator.stop(this.context.currentTime + 0.15);
             
             // Second beep using Web Audio API scheduler for precise timing
+            // Add small buffer (0.17s) to avoid potential overlap with first beep
             const osc2 = this.context.createOscillator();
             const gain2 = this.context.createGain();
             osc2.connect(gain2);
             gain2.connect(this.masterGain);
             osc2.frequency.value = 880;
             
-            // Start second beep 0.15 seconds after first beep
-            const secondBeepTime = this.context.currentTime + 0.15;
+            const secondBeepTime = this.context.currentTime + 0.17;
             gain2.gain.setValueAtTime(0.1, secondBeepTime);
             gain2.gain.exponentialRampToValueAtTime(0.01, secondBeepTime + 0.15);
             osc2.start(secondBeepTime);
