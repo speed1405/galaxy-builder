@@ -2060,7 +2060,7 @@ function updateUI() {
             const existingItem = buildingsList.querySelector(`[data-building="${key}"]`);
             if (!existingItem) {
                 needsBuildingsRebuild = true;
-                continue;
+                break; // Break immediately to rebuild on next update
             }
             
             // Update count
@@ -2141,7 +2141,7 @@ function updateUI() {
                 const existingItem = researchList.querySelector(`[data-research="${key}"]`);
                 if (!existingItem) {
                     needsResearchRebuild = true;
-                    continue;
+                    break; // Break immediately to rebuild on next update
                 }
                 
                 // Calculate display cost
@@ -2199,7 +2199,7 @@ function updateUI() {
             const existingItem = shipsList.querySelector(`[data-ship="${key}"]`);
             if (!existingItem) {
                 needsShipsRebuild = true;
-                continue;
+                break; // Break immediately to rebuild on next update
             }
             
             // Update count
@@ -2336,6 +2336,32 @@ function updateUI() {
     // Update exploration
     document.getElementById('sectors-explored').textContent = gameState.exploration.sectorsExplored;
     document.getElementById('active-expeditions').textContent = gameState.exploration.expeditions.length;
+    
+    // Update exploration button states
+    const exploreSectorBtn = document.getElementById('explore-sector-btn');
+    const sendExpeditionBtn = document.getElementById('send-expedition-btn');
+    const establishColonyBtn = document.getElementById('establish-colony-btn');
+    
+    if (exploreSectorBtn) {
+        const exploreCost = {
+            energy: 500 + (gameState.exploration.sectorsExplored * 100),
+            credits: 1000 + (gameState.exploration.sectorsExplored * 200)
+        };
+        exploreSectorBtn.disabled = !gameState.research.warpDrive || !canAfford(exploreCost);
+    }
+    
+    if (sendExpeditionBtn) {
+        const expeditionCost = { energy: 1000, credits: 2000 };
+        const fleetPower = calculateFleetPower();
+        sendExpeditionBtn.disabled = !gameState.research.warpDrive || fleetPower < 100 || !canAfford(expeditionCost);
+    }
+    
+    if (establishColonyBtn) {
+        const colonyCost = { metal: 5000, energy: 3000, credits: 10000 };
+        establishColonyBtn.disabled = gameState.ships.colonyShip < 1 || 
+                                      gameState.exploration.sectorsExplored < 5 || 
+                                      !canAfford(colonyCost);
+    }
     
     const sectorsDisplay = document.getElementById('sectors-display');
     sectorsDisplay.innerHTML = '';
